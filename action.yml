@@ -1,0 +1,14 @@
+name: "Go action"
+description: "descripcion my tediosa"
+author: "Jorge López Rosende"
+inputs:
+  myinput:
+    description: "descripcion my tediosa"
+    default: "Pepe" 
+    required: false
+outputs:
+  myOutput:
+    description: "descripcion my tediosa"
+runs:
+  using: "docker"
+  image: "Dockerfile"
