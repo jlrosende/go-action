@@ -1,16 +1,18 @@
-ARG go-version=1.19
-FROM golang:$go-version as builder
+FROM golang:1.19 as build
 
 WORKDIR /app
 
-COPY . /app
+COPY go.mod .
+COPY go.sum .
 
-RUN CGO_ENABLED=0 go build -ldflags="-w -s" -v -o app .
+RUN go mod download
 
-# A distroless container image with some basics like SSL certificates
-# https://github.com/GoogleContainerTools/distroless
-FROM gcr.io/distroless/static
+COPY . .
 
-COPY --from=builder /app/app /app
+RUN CGO_ENABLED=0 GOOS=linux go build -a -o app .
 
-ENTRYPOINT ["/app"]
+FROM alpine
+
+COPY --from=build /app/app .
+
+ENTRYPOINT [ "./app" ]
