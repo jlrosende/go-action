@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 )
 
@@ -10,5 +11,13 @@ func main() {
 
 	output := fmt.Sprintf("Hello %s", myInput)
 
-	fmt.Println(fmt.Sprintf(`::set-output name=myOutput::%s`, output))
+	f, err := os.OpenFile(os.Getenv("GITHUB_OUTPUT"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+	if _, err := f.WriteString(fmt.Sprintf(`myOutput=%s`, output)); err != nil {
+		log.Println(err)
+	}
+
 }
