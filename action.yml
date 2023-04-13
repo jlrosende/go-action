@@ -7,8 +7,8 @@ inputs:
     default: "Pepe" 
     required: false
 outputs:
-  myOutput:
-    description: "descripcion my tediosa"
+  matrix_params:
+    description: "outputs params to run matrix actions"
 runs:
   using: "docker"
   image: "Dockerfile"

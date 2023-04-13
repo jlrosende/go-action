@@ -1,0 +1,51 @@
+environments:
+  dev:
+    - # Required
+      name: "function-name"
+      # Required
+      rg|resource_group|project|account: "resource-group-name"
+      # Required
+      package_path: ./code/dist
+      # Optional only for front apps
+      sa|storage_accopunt|s3|gs|google_storage: "storage-account-name"
+      # Required
+      region: weu1
+      # Required (azure|aws|gcp)
+      cloud: azure|aws|gcp
+      # Required (java11|java17|node16)
+      runtime: java11|java17|node16
+
+      # Optional
+      environment:
+       - FOO: "value"
+
+      # Optional (only gcp)
+      secrets:
+        - name: "origin"
+          version: "version"
+          path: "/path-inside-function"
+
+      # Optional
+      # functions: [] # empty => all disabled
+      # functions: [] # nor set => all enabled
+      functions: # nor set => only a,b,c
+        - a
+        - b
+        - c
+
+      # Optional
+      # if not set => cdn not run
+      cdn:
+        rg|resource_group|project|account: "resource-group-name"
+        name: "cdn-name"
+        endpoint: front
+        domain: "domain"
+        cache_path: "/path-to-cache/index.html"
+
+      # Optional
+      # if not set => db not run
+      db:
+        type: postgresql|mongo
+        name: "db-name"
+        rg|resource_group|project|account: "resource-group-name"
+  
