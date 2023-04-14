@@ -1,0 +1,60 @@
+environments:
+  dev:
+    - # Required
+      name: "function-name"
+
+      # Required
+      account: "account-id"
+
+      # Required
+      package_path: ./code/dist
+      # Optional only for front apps
+
+      s3: "storage-account-name"
+      
+      # Required cloud region format 
+      # ej: aws => eu-west-1
+      # ej: azure => westeurope
+      # ej: gcp => europe-west1
+      region: eu-west-1
+
+      # Required (azure|aws|gcp)
+      cloud: aws
+
+      # Required (java11|java17|node16)
+      runtime: node16
+
+      # Optional list os strings key=value
+      environment:
+        - FOO=value
+
+      # Optional (only gcp)
+      # secrets:
+      #   - name: "origin"
+      #     version: "version"
+      #     path: "/path-inside-function"
+
+      # Optional
+      # functions: [] # empty => all disabled
+      # functions: [] # nor set => all enabled
+      functions: # nor set => only a,b,c
+        - a
+        - b
+        - c
+
+      # Optional
+      # if not set => cdn not run
+      cdn:
+        account: "account-id"
+        name: "cdn-name"
+        endpoint: front
+        domain: "domain"
+        cache_path: "/path-to-cache/index.html"
+
+      # Optional
+      # if not set => db not run
+      db:
+        type: postgresql
+        name: "db-name"
+        account: "account-id"
+  

@@ -2,28 +2,37 @@ environments:
   dev:
     - # Required
       name: "function-name"
+      
       # Required
-      rg|resource_group|project|account: "resource-group-name"
-      # Required
-      package_path: ./code/dist
-      # Optional only for front apps
-      sa|storage_accopunt|s3|gs|google_storage: "storage-account-name"
-      # Required
-      region: weu1
-      # Required (azure|aws|gcp)
-      cloud: azure|aws|gcp
-      # Required (java11|java17|node16)
-      runtime: java11|java17|node16
+      resource_group: "resource-group-name"
 
-      # Optional
+      # Required
+      package_path: ./code/dist/
+
+      # Required cloud region format 
+      # ej: aws => eu-west-1
+      # ej: azure => westeurope
+      # ej: gcp => europe-west1
+      region: eu-west-1
+
+      # Required (azure|aws|gcp)
+      cloud: azure
+
+      # Required (java11|java17|node16)
+      runtime: java11
+      
+      # Optional only for front apps
+      storage_account: "storage-account-name"
+
+      # Optional list os strings key=value
       environment:
-       - FOO: "value"
+        - FOO=value
 
       # Optional (only gcp)
-      secrets:
-        - name: "origin"
-          version: "version"
-          path: "/path-inside-function"
+      # secrets:
+      #   - name: "origin"
+      #     version: "version"
+      #     path: "/path-inside-function/secret-name"
 
       # Optional
       # functions: [] # empty => all disabled
@@ -36,7 +45,7 @@ environments:
       # Optional
       # if not set => cdn not run
       cdn:
-        rg|resource_group|project|account: "resource-group-name"
+        resource_group|project|account: "resource-group-name"
         name: "cdn-name"
         endpoint: front
         domain: "domain"
@@ -47,5 +56,5 @@ environments:
       db:
         type: postgresql|mongo
         name: "db-name"
-        rg|resource_group|project|account: "resource-group-name"
+        resource_group|project|account: "resource-group-name"
   

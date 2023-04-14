@@ -28,6 +28,8 @@ var (
 )
 
 func init() {
+	rootCmd.AddCommand(deployCmd)
+
 	deployCmd.Flags().StringVarP(&env, "environment", "e", "", "Select the environment to be deployed (required)")
 	deployCmd.Flags().StringVarP(&from, "from", "f", "", "Select the tag, branch or commit to be deployed (required)")
 	deployCmd.MarkFlagRequired("environment")
@@ -41,7 +43,7 @@ func init() {
 	deployCmd.Flags().StringVarP(&region, "region", "r", ".*", "Regex to select which deployment options are select by region")
 	// Filter by cloud
 
-	deployCmd.Flags().StringVarP(&cloud, "cloud", "cl", "()", "Regex to select which deployment options are select by cloud")
+	deployCmd.Flags().StringVarP(&cloud, "cloud", "c", ".*", "Regex to select which deployment options are select by cloud")
 }
 
 func deploy(cmd *cobra.Command, args []string) error {
