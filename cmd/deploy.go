@@ -4,11 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"regexp"
 
 	"github.com/sethvargo/go-githubactions"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -51,7 +49,9 @@ func deploy(cmd *cobra.Command, args []string) error {
 	log.Tracef("From: %+v\n", from)
 
 	// Validate environment
-	environs := viper.GetStringMap("environments")
+	// environs := viper.GetStringMap("environments")
+
+	environs := config.Env
 
 	log.Tracef("%+v", environs)
 
@@ -61,51 +61,62 @@ func deploy(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("available environments are: %s", env_values)
 	}
 	// Filter by environment
-	options := viper.Get(fmt.Sprintf("environments.%s", env)).([]interface{})
-	log.Tracef("N_Options: %+v", len(options))
+	// options := viper.Get(fmt.Sprintf("environments.%s", env)).([]interface{})
+	options := environs[env]
+	log.Tracef("Number of functions in %s: %d:", env, len(options))
 
-	// Filter by region
-	filtered, err := filterBy(options, region)
+	/*
+		TODO Filter by region
+		// filtered, err := filterBy(options, region)
+		// if err != nil {
+		// 	return err
+		// }
+	*/
+
+	/*
+		TODO Filter by name
+		// filtered, err = filterBy(filtered, name)
+
+		// if err != nil {
+		// 	return err
+		// }
+	*/
+
+	log.Tracef("Number of functions to output: %d", len(options))
+
+	response, err := json.MarshalIndent(options, "", "  ")
+	if err != nil {
+		return err
+	}
+	log.Infof("function_matrix output: \n%s", string(response))
+
+	response, err = json.Marshal(options)
 	if err != nil {
 		return err
 	}
 
-	// Filter by name
-	filtered, err = filterBy(filtered, name)
-
-	if err != nil {
-		return err
-	}
-
-	log.Debug(len(filtered))
-
-	response, err := json.Marshal(filtered)
-	if err != nil {
-		return err
-	}
-
-	log.Debug(string(response))
-
-	githubactions.SetOutput("hola", string(response))
+	githubactions.SetOutput("function_matrix", string(response))
 
 	return nil
 }
 
-func filterBy(options []interface{}, regex string) ([]interface{}, error) {
+/*
+func filterBy(options []types.Function, regex string) ([]types.Function, error) {
 
-	filtered := []interface{}{}
+	// filtered := []types.Function{}
 
-	r, err := regexp.Compile(region)
-	if err != nil {
-		return filtered, err
-	}
+	// r, err := regexp.Compile(region)
+	// if err != nil {
+	// 	return filtered, err
+	// }
 
-	for i, e := range options {
-		if r.MatchString(e.(map[string]interface{})["region"].(string)) {
-			log.Tracef("[%d] %+v", i, e.(map[string]interface{})["region"])
-			filtered = append(filtered, e)
-		}
-	}
+	// for i, e := range options {
+	// 	if r.MatchString(e.(map[string]interface{})["region"].(string)) {
+	// 		log.Tracef("[%d] %+v", i, e.(map[string]interface{})["region"])
+	// 		filtered = append(filtered, e)
+	// 	}
+	// }
 
-	return filtered, nil
+	return nil, errors.New("unimplemented method")
 }
+*/

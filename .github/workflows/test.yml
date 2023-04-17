@@ -16,6 +16,8 @@ jobs:
       - name: Test action
         id: action
         uses: ./
+        with:
+          args: 
 
       - name: Check outputs 
         run: |

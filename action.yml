@@ -2,13 +2,14 @@ name: "Go action"
 description: "descripcion my tediosa"
 author: "Jorge López Rosende"
 inputs:
-  myinput:
-    description: "descripcion my tediosa"
-    default: "Pepe" 
-    required: false
+  args:
+    description: "Argumentos del ejecutable"
+    required: true
 outputs:
-  matrix_params:
+  function_matrix:
     description: "outputs params to run matrix actions"
 runs:
   using: "docker"
   image: "Dockerfile"
+  args:
+    - ${{ inputs.args }}

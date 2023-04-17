@@ -13,7 +13,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gopkg.in/yaml.v3"
 
 	types "gitlab.com/jlrosende/go-action/types"
 )
@@ -51,7 +50,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is sisu.{yml,yaml})")
-	rootCmd.PersistentFlags().StringVarP(&log_level, "log-level", "l", log.WarnLevel.String(), "Log level (trace, debug, info, warn, error, fatal, panic")
+	rootCmd.PersistentFlags().StringVarP(&log_level, "log-level", "l", log.InfoLevel.String(), "Log level (trace, debug, info, warn, error, fatal, panic")
 	rootCmd.PersistentFlags().StringVar(&log_format, "log-format", "", "Log format (logfmt, json, text)")
 
 }
@@ -77,26 +76,9 @@ func initConfig() {
 		log.Fatalf("unable to unmarshall the config %v", err)
 	}
 
-	log.Warnf("%+v", *config)
-
 	validate := validator.New()
 	if err := validate.Struct(config); err != nil {
-		for i, e := range err.(validator.ValidationErrors) {
-			log.Errorf("Missing required attributes %d %v\n", i, e)
-		}
-		log.Fatal()
-	}
-
-	// for _, v := range config.Environments {
-	// 	if err := validate.Struct(v); err != nil {
-	// 		log.Fatalf("Missing required attributes %v\n", err)
-	// 	}
-	// }
-
-	if c, err := yaml.Marshal(*config); err != nil {
 		log.Fatalf("Missing required attributes %v\n", err)
-	} else {
-		log.Fatalf("\n%+v", string(c))
 	}
 }
 

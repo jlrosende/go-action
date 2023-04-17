@@ -25,7 +25,7 @@ environments:
       storage_account: "storage-account-name"
 
       # Optional list os strings key=value
-      environment:
+      environments:
         - FOO=value
 
       # Optional (only gcp)
@@ -45,16 +45,130 @@ environments:
       # Optional
       # if not set => cdn not run
       cdn:
-        resource_group|project|account: "resource-group-name"
+        resource_group: "resource-group-name"
         name: "cdn-name"
         endpoint: front
         domain: "domain"
-        cache_path: "/path-to-cache/index.html"
+        cache_path: "/path-to-cache/**/*.html"
 
       # Optional
       # if not set => db not run
       db:
-        type: postgresql|mongo
+        resource_group: "resource-group-name"
+        type: postgresql
         name: "db-name"
-        resource_group|project|account: "resource-group-name"
-  
+    - # Required
+      name: "function-name"
+      
+      # Required
+      resource_group: "resource-group-name"
+
+      # Required
+      package_path: ./code/dist/
+
+      # Required cloud region format 
+      # ej: aws => eu-west-1
+      # ej: azure => westeurope
+      # ej: gcp => europe-west1
+      region: eu-west-1
+
+      # Required (azure|aws|gcp)
+      cloud: azure
+
+      # Required (java11|java17|node16)
+      runtime: java11
+      
+      # Optional only for front apps
+      storage_account: "storage-account-name"
+
+      # Optional list os strings key=value
+      environments:
+        - FOO=value
+
+      # Optional (only gcp)
+      # secrets:
+      #   - name: "origin"
+      #     version: "version"
+      #     path: "/path-inside-function/secret-name"
+
+      # Optional
+      # functions: [] # empty => all disabled
+      # functions: [] # nor set => all enabled
+      functions: # nor set => only a,b,c
+        - a
+        - b
+        - c
+
+      # Optional
+      # if not set => cdn not run
+      cdn:
+        resource_group: "resource-group-name"
+        name: "cdn-name"
+        endpoint: front
+        domain: "domain"
+        cache_path: "/path-to-cache/**/*.html"
+
+      # Optional
+      # if not set => db not run
+      db:
+        resource_group: "resource-group-name"
+        type: postgresql
+        name: "db-name"
+  pre:
+    - # Required
+      name: "function-name"
+      
+      # Required
+      resource_group: "resource-group-name"
+
+      # Required
+      package_path: ./code/dist/
+
+      # Required cloud region format 
+      # ej: aws => eu-west-1
+      # ej: azure => westeurope
+      # ej: gcp => europe-west1
+      region: eu-west-1
+
+      # Required (azure|aws|gcp)
+      cloud: azure
+
+      # Required (java11|java17|node16)
+      runtime: java11
+      
+      # Optional only for front apps
+      storage_account: "storage-account-name"
+
+      # Optional list os strings key=value
+      environments:
+        - FOO=value
+
+      # Optional (only gcp)
+      # secrets:
+      #   - name: "origin"
+      #     version: "version"
+      #     path: "/path-inside-function/secret-name"
+
+      # Optional
+      # functions: [] # empty => all disabled
+      # functions: [] # nor set => all enabled
+      functions: # nor set => only a,b,c
+        - a
+        - b
+        - c
+
+      # Optional
+      # if not set => cdn not run
+      cdn:
+        resource_group: "resource-group-name"
+        name: "cdn-name"
+        endpoint: front
+        domain: "domain"
+        cache_path: "/path-to-cache/**/*.html"
+
+      # Optional
+      # if not set => db not run
+      db:
+        resource_group: "resource-group-name"
+        type: postgresql
+        name: "db-name"
