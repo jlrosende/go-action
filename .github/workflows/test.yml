@@ -17,7 +17,7 @@ jobs:
         id: action
         uses: ./
         with:
-          args: 
+          args: deploy --config test/0-azure.yml -e pre -f 1.0.0
 
       - name: Check outputs 
         run: |
