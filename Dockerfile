@@ -9,10 +9,11 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -a -o app .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -o sisu .
 
 FROM alpine
 
-COPY --from=build /app/app /app
+COPY --from=build /app/sisu /sisu
+COPY entrypoint.sh /entrypoint.sh
 
-ENTRYPOINT [ "/app" ]
+ENTRYPOINT [ "/entrypoint.sh" ]
