@@ -23,7 +23,7 @@ jobs:
         run: |
           echo "${{ steps.action.outputs.function_matrix }}"
 
-      - name: Check outputs 
+      - name: Check outputs json 
         run: |
           echo "${{ toJson(teps.action.outputs.function_matrix) }}"
                 
