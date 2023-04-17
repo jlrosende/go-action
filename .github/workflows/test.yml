@@ -21,5 +21,9 @@ jobs:
 
       - name: Check outputs 
         run: |
-          echo "${{ steps.action.outputs }}"
+          echo "${{ steps.action.outputs.function_matrix }}"
+
+      - name: Check outputs 
+        run: |
+          echo "${{ toJson(teps.action.outputs.function_matrix) }}"
                 
