@@ -19,6 +19,7 @@ jobs:
       - name: Parse command
         id: parse
         run: |
+          echo "${{ github.event.comment.body }}"
           params=$(echo "${{ github.event.comment.body }}" | sed 's/\/sisu //')
           echo "args=$params" >> $GITHUB_OUTPUT
 
