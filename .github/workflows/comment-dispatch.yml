@@ -1,0 +1,72 @@
+name: Test
+
+on:
+  push:
+  issue_comment:
+    types:
+      - created
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    if: startsWith(github.event.comment.body, '/sisu ')
+
+    outputs:
+      function_matrix: '{ "include": ${{ steps.action.outputs.function_matrix }} }'
+
+    steps:
+      - name: Parse command
+        id: parse
+        run: |
+          params=$(echo "${{ github.event.comment.body }}" | sed 's/\/sisu //')
+          echo "args=$params" >> $GITHUB_OUTPUT
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Test action
+        id: action
+        uses: ./
+        with:
+          args: ${{ steps.parse.outputs.args }}
+
+      - name: Command report
+        uses: actions/github-script@v6
+        env:
+          SISU_OUTPUT: ${{ steps.action.outputs.function_matrix }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Sisu Output
+
+            <details><summary>cmd output</summary>
+
+            \`\`\`json\n
+            ${process.env.SISU_OUTPUT}
+            \`\`\`
+
+            </details>
+
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+  run-matrix:
+    name: Check Matrix
+    runs-on: ubuntu-latest
+    needs:
+      - test
+
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.test.outputs.function_matrix) }}
+
+    steps:
+      - name: ${{ matrix.name }}
+        run: echo "${{ toJson(matrix) }}"
