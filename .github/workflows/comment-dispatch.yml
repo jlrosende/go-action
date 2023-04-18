@@ -15,6 +15,10 @@ jobs:
     outputs:
       function_matrix: '{ "include": ${{ steps.action.outputs.function_matrix }} }'
 
+    permissions:
+      pull-requests: write
+      issues: write
+
     steps:
       - name: Parse command
         id: parse
@@ -26,7 +30,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Test action
+      - name: Create matrix
+        continue-on-error: true
         id: action
         uses: ./
         with:
@@ -57,6 +62,10 @@ jobs:
               repo: context.repo.repo,
               body: output
             })
+
+      - name: Matrix estatus
+        if: steps.action.outcome == 'failure'
+        run: exit 1
 
   run-matrix:
     name: Check Matrix
