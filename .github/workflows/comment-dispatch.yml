@@ -1,4 +1,4 @@
-name: Test
+name: Issue or Pull Request trigguer
 
 on:
   push:
