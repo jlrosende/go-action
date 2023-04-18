@@ -40,7 +40,7 @@ jobs:
       - name: Command report
         uses: actions/github-script@v6
         env:
-          SISU_OUTPUT: ${{ toJSON(steps.action.outputs.function_matrix) }}
+          SISU_OUTPUT: ${{ toJSON(fromJSON(steps.action.outputs.function_matrix)) }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
