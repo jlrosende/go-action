@@ -1,16 +1,13 @@
 environments:
   dev:
-    - # Required
-      name: "function-name"
+      # Required
+    - name: "function-name"
       
       # Required
       rg|resource_group|project|account: "resource-group-name"
 
       # Required IMPORTANT end path with /
       package_path: ./code/dist/
-
-      # Optional only for front apps
-      sa|storage_accopunt|s3|gs|google_storage: "storage-account-name"
 
       # Required cloud region format 
       # ej: aws => eu-west-1
@@ -41,6 +38,9 @@ environments:
         - a
         - b
         - c
+
+      # Optional only for front apps
+      sa|storage_accopunt|s3|gs|google_storage: "storage-account-name"
 
       # Optional
       # if not set => cdn not run

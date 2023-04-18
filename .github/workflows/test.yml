@@ -8,6 +8,10 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+
+    outputs:
+      function_matrix: "{ \"include\": ${{ steps.action.outputs.function_matrix }} }"
+
     steps:
 
       - name: Checkout
@@ -26,4 +30,17 @@ jobs:
       - name: Check outputs json 
         run: |
           echo "${{ toJson(steps.action.outputs.function_matrix) }}"
-                
+
+  run-matrix:
+    name: Check Matrix
+    runs-on: ubuntu-latest
+    needs: 
+      - test
+    
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.test.outputs.function_matrix) }}
+
+    steps: 
+      - name: ${{ matrix.name }}
+        run: echo "${{ toJson(matrix) }}"
