@@ -14,7 +14,7 @@ var testCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(testCmd)
+
 }
 
 func test(ccmd *cobra.Command, args []string) error {

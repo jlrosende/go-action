@@ -1,6 +1,6 @@
 module gitlab.com/jlrosende/go-action
 
-go 1.19
+go 1.20
 
 require (
 	github.com/go-playground/validator/v10 v10.12.0

@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"gitlab.com/jlrosende/go-action/cmd/create"
 	types "gitlab.com/jlrosende/go-action/types"
 )
 
@@ -50,6 +51,13 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is sisu.{yml,yaml})")
 	rootCmd.PersistentFlags().StringVarP(&log_level, "log-level", "l", log.InfoLevel.String(), "Log level (trace, debug, info, warn, error, fatal, panic")
 	rootCmd.PersistentFlags().StringVar(&log_format, "log-format", "", "Log format (logfmt, json, text)")
+
+	rootCmd.AddCommand(create.CreateCmd)
+	rootCmd.AddCommand(deployCmd)
+	rootCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(releaseCmd)
+	rootCmd.AddCommand(testCmd)
+	rootCmd.AddCommand(updateCmd)
 
 }
 

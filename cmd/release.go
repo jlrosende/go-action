@@ -16,7 +16,7 @@ var (
 )
 
 func init() {
-	rootCmd.AddCommand(releaseCmd)
+
 }
 
 func release(cmd *cobra.Command, args []string) error {

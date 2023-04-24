@@ -18,15 +18,15 @@ var (
 	name      string
 	cloud     string
 	deployCmd = &cobra.Command{
-		Use:   "deploy",
-		Short: "Add git repository containing markdown content files",
-		Long:  ``,
-		RunE:  deploy,
+		Use:     "deploy",
+		Aliases: []string{"d"},
+		Short:   "",
+		Long:    ``,
+		RunE:    deploy,
 	}
 )
 
 func init() {
-	rootCmd.AddCommand(deployCmd)
 
 	deployCmd.Flags().StringVarP(&env, "environment", "e", "", "Select the environment to be deployed (required)")
 	deployCmd.Flags().StringVarP(&from, "from", "f", "", "Select the tag, branch or commit to be deployed (required)")
