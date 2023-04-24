@@ -75,17 +75,20 @@ func initConfig() {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err == nil {
-		log.Debugf("Using config file: %s", viper.ConfigFileUsed())
+		log.Warnf("Using config file: %s", viper.ConfigFileUsed())
 	}
 
 	if err := viper.Unmarshal(config); err != nil {
 		log.Fatalf("unable to unmarshall the config %v", err)
 	}
 
+	log.Info(config)
+
 	validate := validator.New()
-	if err := validate.Struct(config); err != nil {
+	if err := validate.Struct(config); err != nil && viper.ConfigFileUsed() != "" {
 		log.Fatalf("Missing required attributes %v\n", err)
 	}
+
 }
 
 func setUpLogs(out io.Writer, level string) error {

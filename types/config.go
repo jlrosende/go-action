@@ -1,6 +1,7 @@
 package types
 
 type Config struct {
+	Version string `yaml:"version" mapstructure:"version" validate:"required"`
 	Env map[string][]Function `yaml:"environments" mapstructure:"environments" validate:"required,dive,dive"`
 }
 

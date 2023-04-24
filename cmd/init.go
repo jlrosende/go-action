@@ -24,5 +24,6 @@ func initRepo(ccmd *cobra.Command, args []string) error {
 	log.Info("-- PR Int/Unit Test [1 - ]")
 	log.Info("-- Create Release [2 - ]")
 	log.Info("-- Create Snapshot [2 - ]")
+
 	return nil
 }
