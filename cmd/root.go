@@ -12,8 +12,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"gitlab.com/jlrosende/go-action/cmd/create"
-	types "gitlab.com/jlrosende/go-action/types"
+	"github.com/jlrosende/go-action/cmd/create"
+	types "github.com/jlrosende/go-action/types"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -27,12 +27,6 @@ var (
 		Short:   "Tool to deploy and test Sisu Functions",
 		Long:    `.`,
 		Version: "v1.0.0",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			if err := setUpLogs(os.Stdout, log_level); err != nil {
-				return err
-			}
-			return nil
-		},
 	}
 )
 
@@ -46,11 +40,12 @@ func Execute() {
 }
 
 func init() {
+	rootCmd.PersistentFlags().StringVarP(&log_level, "log-level", "l", log.InfoLevel.String(), "Log level (trace, debug, info, warn, error, fatal, panic")
+	rootCmd.PersistentFlags().StringVar(&log_format, "log-format", "", "Log format (logfmt, json, text)")
+
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is sisu.{yml,yaml})")
-	rootCmd.PersistentFlags().StringVarP(&log_level, "log-level", "l", log.InfoLevel.String(), "Log level (trace, debug, info, warn, error, fatal, panic")
-	rootCmd.PersistentFlags().StringVar(&log_format, "log-format", "", "Log format (logfmt, json, text)")
 
 	rootCmd.AddCommand(create.CreateCmd)
 	rootCmd.AddCommand(deployCmd)
@@ -62,6 +57,10 @@ func init() {
 }
 
 func initConfig() {
+
+	if err := setUpLogs(os.Stdout, log_level); err != nil {
+		log.Fatal(err)
+	}
 
 	if cfgFile != "" {
 		// Use config file from the flag.
@@ -75,14 +74,12 @@ func initConfig() {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err == nil {
-		log.Warnf("Using config file: %s", viper.ConfigFileUsed())
+		log.Debugf("Using config file: %s", viper.ConfigFileUsed())
 	}
 
 	if err := viper.Unmarshal(config); err != nil {
 		log.Fatalf("unable to unmarshall the config %v", err)
 	}
-
-	log.Info(config)
 
 	validate := validator.New()
 	if err := validate.Struct(config); err != nil && viper.ConfigFileUsed() != "" {
