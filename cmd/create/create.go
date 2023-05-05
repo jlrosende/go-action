@@ -12,7 +12,6 @@ var CreateCmd = &cobra.Command{
 }
 
 func init() {
-	CreateCmd.AddCommand(deployCmd)
 	CreateCmd.AddCommand(releaseCmd)
-	CreateCmd.AddCommand(environmentCmd)
+	CreateCmd.AddCommand(snapshotCmd)
 }

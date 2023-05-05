@@ -13,18 +13,18 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/jlrosende/go-action/cmd/create"
-	types "github.com/jlrosende/go-action/types"
+	conf "github.com/jlrosende/go-action/config"
 )
 
 // rootCmd represents the base command when called without any subcommands
 var (
 	cfgFile    string
-	config     = &types.Config{}
+	config     = &conf.Config{}
 	log_level  string
 	log_format string
 	rootCmd    = &cobra.Command{
 		Use:     "sisu",
-		Short:   "Tool to deploy and test Sisu Functions",
+		Short:   "Tool to interact with Sisu",
 		Long:    `.`,
 		Version: "v1.0.0",
 	}
@@ -48,9 +48,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is sisu.{yml,yaml})")
 
 	rootCmd.AddCommand(create.CreateCmd)
-	rootCmd.AddCommand(deployCmd)
+	rootCmd.AddCommand(matrixCmd)
 	rootCmd.AddCommand(initCmd)
-	rootCmd.AddCommand(releaseCmd)
 	rootCmd.AddCommand(testCmd)
 	rootCmd.AddCommand(updateCmd)
 

@@ -1,8 +1,8 @@
-package types
+package config
 
 type Config struct {
-	Version string `yaml:"version" mapstructure:"version" validate:"required"`
-	Env map[string][]Function `yaml:"environments" mapstructure:"environments" validate:"required,dive,dive"`
+	Version string                `yaml:"version" mapstructure:"version" validate:"required"`
+	Env     map[string][]Function `yaml:"environments" mapstructure:"environments" validate:"required,dive,dive"`
 }
 
 type Function struct {
@@ -30,6 +30,8 @@ type Function struct {
 	Cdn *Cdn `json:"cdn,omitempty" yaml:"cdn,omitempty" mapstructure:"cdn,omitempty" validate:"omitempty,dive"`
 
 	Database *Database `json:"db,omitempty" yaml:"db,omitempty" mapstructure:"db,omitempty" validate:"omitempty,dive"`
+
+	Vault *Vault `json:"vault,omitempty" yaml:"db,omitempty" mapstructure:"db,omitempty" validate:"omitempty,dive"`
 }
 
 type Secret struct {
@@ -56,4 +58,12 @@ type Database struct {
 
 	Name string `json:"name" yaml:"name" mapstructure:"name" validate:"required"`
 	Type string `json:"type" yaml:"type" mapstructure:"type" validate:"required,oneof=postgresql mysql mongodb"`
+}
+
+type Vault struct {
+	ResourceGroup string `json:"resource_group,omitempty" yaml:"resource_group,omitempty" mapstructure:"resource_group,omitempty" validate:"required_if=Cloud azure,excluded_with=Account Project"`
+	Account       string `json:"account,omitempty" yaml:"account,omitempty" mapstructure:"account,omitempty" validate:"required_if=Cloud aws,excluded_with=ResourceGroup Project"`
+	Project       string `json:"project,omitempty" yaml:"project,omitempty" mapstructure:"project,omitempty" validate:"required_if=Cloud gcp,excluded_with=ResourceGroup Account"`
+
+	Name string `json:"name" yaml:"name" mapstructure:"name" validate:"required"`
 }
