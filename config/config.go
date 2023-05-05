@@ -31,7 +31,7 @@ type Function struct {
 
 	Database *Database `json:"db,omitempty" yaml:"db,omitempty" mapstructure:"db,omitempty" validate:"omitempty,dive"`
 
-	Vault *Vault `json:"vault,omitempty" yaml:"db,omitempty" mapstructure:"db,omitempty" validate:"omitempty,dive"`
+	Vault *Vault `json:"vault,omitempty" yaml:"vault,omitempty" mapstructure:"vault,omitempty" validate:"omitempty,dive"`
 }
 
 type Secret struct {
