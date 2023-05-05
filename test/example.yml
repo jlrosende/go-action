@@ -1,16 +1,16 @@
 version: "0.0.1"
 environments:
   dev:
-      # Required
+    # Required
     - name: "function-name"
-      
+
       # Required
       rg|resource_group|project|account: "resource-group-name"
 
       # Required IMPORTANT end path with /
       package_path: ./code/dist/
 
-      # Required cloud region format 
+      # Required cloud region format
       # ej: aws => eu-west-1
       # ej: azure => westeurope
       # ej: gcp => europe-west1
@@ -30,7 +30,7 @@ environments:
       secrets:
         - name: "origin"
           version: "version"
-          path: "/path-inside-function"
+          path: "/path-inside-function/"
 
       # Optional
       # functions: [] # empty => all disabled
@@ -46,6 +46,7 @@ environments:
       # Optional
       # if not set => cdn not run
       cdn:
+        enabled: true
         rg|resource_group|project|account: "resource-group-name"
         name: "cdn-name"
         endpoint: front
@@ -55,7 +56,7 @@ environments:
       # Optional
       # if not set => db not run
       db:
+        enabled: true
         type: postgresql|mongo
         name: "db-name"
         rg|resource_group|project|account: "resource-group-name"
-  

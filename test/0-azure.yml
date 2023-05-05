@@ -13,6 +13,7 @@ environments:
       functions:
         - a
       db:
+        enabled: true
         resource_group: "resource-group-name"
         type: postgresql
         name: "db-name"
@@ -37,6 +38,19 @@ environments:
       region: eu-west-1
       cloud: azure
       runtime: java11
+      environments:
+        - FOO=value_1
+        - BAR=value_2
+
+  pro:
+    # Required
+    - name: "function-3"
+      type: front
+      resource_group: "resource-group-name"
+      package_path: ./code/dist/
+      region: eu-west-1
+      cloud: azure
+      runtime: node16
       environments:
         - FOO=value_1
         - BAR=value_2
