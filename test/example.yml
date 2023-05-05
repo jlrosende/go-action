@@ -46,7 +46,6 @@ environments:
       # Optional
       # if not set => cdn not run
       cdn:
-        enabled: true
         rg|resource_group|project|account: "resource-group-name"
         name: "cdn-name"
         endpoint: front
@@ -56,7 +55,6 @@ environments:
       # Optional
       # if not set => db not run
       db:
-        enabled: true
         type: postgresql|mongo
         name: "db-name"
         rg|resource_group|project|account: "resource-group-name"

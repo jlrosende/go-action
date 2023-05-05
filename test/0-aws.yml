@@ -46,7 +46,6 @@ environments:
       # Optional
       # if not set => cdn not run
       cdn:
-        enabled: true
         account: "account-id"
         name: "cdn-name"
         endpoint: front
@@ -56,7 +55,6 @@ environments:
       # Optional
       # if not set => db not run
       db:
-        enabled: true
         type: postgresql
         name: "db-name"
         account: "account-id"

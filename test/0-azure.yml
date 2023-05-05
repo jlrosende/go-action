@@ -13,7 +13,6 @@ environments:
       functions:
         - a
       db:
-        enabled: true
         resource_group: "resource-group-name"
         type: postgresql
         name: "db-name"
