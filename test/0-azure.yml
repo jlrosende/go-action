@@ -53,3 +53,4 @@ environments:
       environments:
         - FOO=value_1
         - BAR=value_2
+      storage_account: "storage_name"

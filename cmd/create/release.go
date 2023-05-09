@@ -1,10 +1,8 @@
 package create
 
 import (
-	"context"
 	"encoding/json"
 
-	"github.com/google/go-github/github"
 	"github.com/sethvargo/go-githubactions"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -43,28 +41,28 @@ func init() {
 
 	token = githubactions.GetInput("token")
 
-	if token == "" {
-		githubactions.Fatalf("missing 'token'")
-	}
+	// if token == "" {
+	// 	githubactions.Fatalf("missing 'token'")
+	// }
 }
 
 func release(ccmd *cobra.Command, args []string) {
 
-	client := github.NewClient(nil)
+	// client := github.NewClient(nil)
 
-	ghctx, err := githubactions.Context()
-	if err != nil {
-		log.Error(err)
-		return
-	}
+	// ghctx, err := githubactions.Context()
+	// if err != nil {
+	// 	log.Error(err)
+	// 	return
+	// }
 
-	repo, _, err := client.Repositories.Get(context.Background(), ghctx.RepositoryOwner, ghctx.Repository)
-	if err != nil {
-		log.Error(err)
-		return
-	}
+	// repo, _, err := client.Repositories.Get(context.Background(), ghctx.RepositoryOwner, ghctx.Repository)
+	// if err != nil {
+	// 	log.Error(err)
+	// 	return
+	// }
 
-	log.Trace(repo)
+	// log.Trace(repo)
 
 	response, err := json.Marshal(crArgs)
 	if err != nil {
