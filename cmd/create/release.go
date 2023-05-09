@@ -23,13 +23,13 @@ var (
 type CreateReleaseArgs struct {
 	Env       string `json:"env"`
 	From      string `json:"from"`
-	Version   string `json:"version,omitempty"`
-	Increment string `json:"increment,omitempty"`
+	Version   string `json:"version"`
+	Increment string `json:"increment"`
 }
 
 func init() {
-	releaseCmd.Flags().StringVarP(&crArgs.Env, "environment", "e", "", "Select the environment to be matrixed (required)")
-	releaseCmd.Flags().StringVarP(&crArgs.From, "from", "f", "", "Select the tag, branch or commit to be matrixed (required)")
+	releaseCmd.Flags().StringVarP(&crArgs.Env, "environment", "e", "", "Select the environment (required)")
+	releaseCmd.Flags().StringVarP(&crArgs.From, "from", "f", "", "Select the tag, branch or commit (required)")
 	releaseCmd.MarkFlagRequired("environment")
 	releaseCmd.MarkFlagRequired("from")
 	releaseCmd.MarkFlagsRequiredTogether("environment", "from")
