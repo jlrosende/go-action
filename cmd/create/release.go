@@ -3,6 +3,7 @@ package create
 import (
 	"encoding/json"
 
+	"github.com/jlrosende/go-action/utils"
 	"github.com/sethvargo/go-githubactions"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -48,6 +49,14 @@ func init() {
 
 func release(ccmd *cobra.Command, args []string) {
 
+	// Validate args
+	bumpOps := []string{"patch", "minor", "major"}
+	if !utils.Contains(bumpOps, crArgs.Increment) {
+		githubactions.Errorf("ERROR: --increment only allow the following arguments %s", bumpOps)
+		log.Fatalf("ERROR: --increment only allow the following arguments %s", bumpOps)
+		return
+	}
+
 	// client := github.NewClient(nil)
 
 	// ghctx, err := githubactions.Context()
@@ -66,7 +75,8 @@ func release(ccmd *cobra.Command, args []string) {
 
 	response, err := json.Marshal(crArgs)
 	if err != nil {
-		log.Error(err)
+		githubactions.Errorf("ERROR: %s", err.Error())
+		log.Fatal(err)
 		return
 	}
 	githubactions.SetOutput("args", string(response))

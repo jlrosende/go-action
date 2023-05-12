@@ -76,5 +76,3 @@ sisu completion powersehll
 ```bash
 sisu completion fish
 ```
-
-aaaaaa

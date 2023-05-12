@@ -1,5 +1,11 @@
 package config
 
+import (
+	"github.com/go-playground/validator/v10"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
+)
+
 type Config struct {
 	Version string                `yaml:"version" mapstructure:"version" validate:"required"`
 	Env     map[string][]Function `yaml:"environments" mapstructure:"environments" validate:"required,dive,dive"`
@@ -66,4 +72,37 @@ type Vault struct {
 	Project       string `json:"project,omitempty" yaml:"project,omitempty" mapstructure:"project,omitempty" validate:"required_if=Cloud gcp,excluded_with=ResourceGroup Account"`
 
 	Name string `json:"name" yaml:"name" mapstructure:"name" validate:"required"`
+}
+
+func LoadConfig(config *Config, cfgFile, dir string) error {
+	if cfgFile != "" {
+		// Use config file from the flag.
+		viper.SetConfigFile(cfgFile)
+	} else {
+		if dir == "" {
+			dir = "."
+		}
+		viper.AddConfigPath(dir)
+		viper.SetConfigType("yaml")
+		viper.SetConfigName("sisu")
+	}
+
+	viper.AutomaticEnv()
+
+	if err := viper.ReadInConfig(); err == nil {
+		log.Debugf("Using config file: %s", viper.ConfigFileUsed())
+	}
+
+	if err := viper.Unmarshal(config); err != nil {
+		// log.Fatalf("unable to unmarshall the config %v", err)
+		return err
+	}
+
+	validate := validator.New()
+	if err := validate.Struct(config); err != nil && viper.ConfigFileUsed() != "" {
+		// log.Fatalf("Missing required attributes %v\n", err)
+		return err
+	}
+
+	return nil
 }

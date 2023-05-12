@@ -7,10 +7,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/go-playground/validator/v10"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"github.com/jlrosende/go-action/cmd/create"
 	conf "github.com/jlrosende/go-action/config"
@@ -19,7 +17,7 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var (
 	cfgFile    string
-	config     = &conf.Config{}
+	config     conf.Config
 	log_level  string
 	log_format string
 	rootCmd    = &cobra.Command{
@@ -41,11 +39,11 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&log_level, "log-level", "l", log.InfoLevel.String(), "Log level (trace, debug, info, warn, error, fatal, panic")
+
 	rootCmd.PersistentFlags().StringVar(&log_format, "log-format", "", "Log format (logfmt, json, text)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is sisu.{yml,yaml})")
 
 	cobra.OnInitialize(initConfig)
-
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is sisu.{yml,yaml})")
 
 	rootCmd.AddCommand(create.CreateCmd)
 	rootCmd.AddCommand(matrixCmd)
@@ -61,29 +59,29 @@ func initConfig() {
 		log.Fatal(err)
 	}
 
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		viper.AddConfigPath(".")
-		viper.SetConfigType("yaml")
-		viper.SetConfigName("sisu")
-	}
+	// if cfgFile != "" {
+	// 	// Use config file from the flag.
+	// 	viper.SetConfigFile(cfgFile)
+	// } else {
+	// 	viper.AddConfigPath(".")
+	// 	viper.SetConfigType("yaml")
+	// 	viper.SetConfigName("sisu")
+	// }
 
-	viper.AutomaticEnv()
+	// viper.AutomaticEnv()
 
-	if err := viper.ReadInConfig(); err == nil {
-		log.Debugf("Using config file: %s", viper.ConfigFileUsed())
-	}
+	// if err := viper.ReadInConfig(); err == nil {
+	// 	log.Debugf("Using config file: %s", viper.ConfigFileUsed())
+	// }
 
-	if err := viper.Unmarshal(config); err != nil {
-		log.Fatalf("unable to unmarshall the config %v", err)
-	}
+	// if err := viper.Unmarshal(config); err != nil {
+	// 	log.Fatalf("unable to unmarshall the config %v", err)
+	// }
 
-	validate := validator.New()
-	if err := validate.Struct(config); err != nil && viper.ConfigFileUsed() != "" {
-		log.Fatalf("Missing required attributes %v\n", err)
-	}
+	// validate := validator.New()
+	// if err := validate.Struct(config); err != nil && viper.ConfigFileUsed() != "" {
+	// 	log.Fatalf("Missing required attributes %v\n", err)
+	// }
 
 }
 
