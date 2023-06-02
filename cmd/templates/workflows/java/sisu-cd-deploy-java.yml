@@ -1,0 +1,155 @@
+name: 4 - SISU CD Deploy - Java
+
+on:
+  workflow_call:
+    inputs:
+      from:
+        description: "Origin of code to publish artifacts"
+        required: true
+        type: string
+      environment:
+        description: "Environment"
+        required: true
+        type: string
+      extra_args:
+        description: "extra args to select the fucntions to deploy"
+        type: string
+        required: false
+        default: ""
+    secrets:
+      SISU:
+        required: true
+      DIST_PLAT_DEPLOYER_USERNAME:
+        required: true
+      DIST_PLAT_DEPLOYER_TOKEN:
+        required: true
+      DT_ENDPOINT:
+        required: true
+      DT_SECRET:
+        required: true
+      GH_TOKEN_READER:
+        required: true
+
+  workflow_dispatch:
+    inputs:
+      from:
+        description: "Origin of code to publish artifacts"
+        required: true
+        type: string
+      environment:
+        description: "Environment"
+        required: true
+        type: string
+      extra_args:
+        description: "extra args to select the fucntions to deploy"
+        type: string
+        required: false
+        default: ""
+
+jobs:
+  artifact:
+    uses: inditex/lib-sisucommonsgh/.github/workflows/check-artifact.yml@v2.0.0-java-alpha.6
+    with:
+      from: ${{ inputs.from }}
+      environment: ${{ inputs.environment }}
+      extra_args: ${{ inputs.extra_args }}
+    secrets:
+      SISU: ${{ secrets.SISU }}
+      DIST_PLAT_DEPLOYER_USERNAME: ${{ secrets.DIST_PLAT_DEPLOYER_USERNAME }}
+      DIST_PLAT_DEPLOYER_TOKEN: ${{ secrets.DIST_PLAT_DEPLOYER_TOKEN }}
+      GH_TOKEN_READER: ${{ secrets.GH_TOKEN_READER }}
+
+  build:
+    if: ${{ needs.artifact.outputs.build == 'true' }}
+    needs:
+      - artifact
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.artifact.outputs.function_matrix) }}
+    uses: inditex/lib-sisucommonsgh/.github/workflows/build-azf-java.yml@v2.0.0-java-alpha.6
+    with:
+      from: ${{ inputs.from }}
+      environment: ${{ inputs.environment }}
+      AZURE_FUNCTIONAPP_RESOURCEGROUP: ${{ matrix.resource_group }}
+      AZURE_FUNCTIONAPP_NAME: ${{ matrix.name }}
+      PACKAGE_PATH: ${{ matrix.package_path }}
+      functions: ${{ toJSON(matrix.functions) }}
+    secrets:
+      SISU: ${{ secrets.SISU }}
+      DIST_PLAT_DEPLOYER_USERNAME: ${{ secrets.DIST_PLAT_DEPLOYER_USERNAME }}
+      DIST_PLAT_DEPLOYER_TOKEN: ${{ secrets.DIST_PLAT_DEPLOYER_TOKEN }}
+      DT_ENDPOINT: ${{ secrets.DT_ENDPOINT }}
+      DT_SECRET: ${{ secrets.DT_SECRET }}
+      GH_TOKEN_READER: ${{ secrets.GH_TOKEN_READER }}
+
+  liquibase:
+    if: always() && needs.artifact.result == 'success'
+    needs:
+      - artifact
+      - build
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.artifact.outputs.function_matrix) }}
+    uses: inditex/lib-sisucommonsgh/.github/workflows/liquibase.yml@v2.0.0-java-alpha.6
+    with:
+      enabled: ${{ contains(toJSON(matrix), '"db":') }}
+      from: ${{ inputs.from }}
+      environment: ${{ inputs.environment }}
+      vault_resourcegroup: ${{ matrix.vault.resource_group }}
+      vault_name: ${{ matrix.vault.name }}
+      db_resourcegroup: ${{ matrix.db.resource_group }}
+      db_name: ${{ matrix.db.name }}
+      db_type: ${{ matrix.db.type }}
+    secrets:
+      SISU: ${{ secrets.SISU }}
+
+  publish:
+    if: always() && needs.artifact.result == 'success'
+    needs:
+      - artifact
+      - build
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.artifact.outputs.function_matrix) }}
+    uses: inditex/lib-sisucommonsgh/.github/workflows/publish-azf.yml@v2.0.0-java-alpha.6
+    with:
+      from: ${{ inputs.from }}
+      environment: ${{ inputs.environment }}
+      AZURE_FUNCTIONAPP_RESOURCEGROUP: ${{ matrix.resource_group }}
+      AZURE_FUNCTIONAPP_NAME: ${{ matrix.name }}
+      PACKAGE_PATH: ${{ matrix.package_path }}
+      settings: ${{ toJSON(matrix.environments) }}
+    secrets:
+      SISU: ${{ secrets.SISU }}
+      DIST_PLAT_DEPLOYER_USERNAME: ${{ secrets.DIST_PLAT_DEPLOYER_USERNAME }}
+      DIST_PLAT_DEPLOYER_TOKEN: ${{ secrets.DIST_PLAT_DEPLOYER_TOKEN }}
+
+  swap:
+    if: always() && needs.publish.result == 'success' && !contains(fromJSON('["failure", "canceled"]'), needs.liquibase.result)
+    needs:
+      - artifact
+      - publish
+      - liquibase
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.artifact.outputs.function_matrix) }}
+    uses: inditex/lib-sisucommonsgh/.github/workflows/swap-azf.yml@v2.0.0-java-alpha.6
+    with:
+      from: ${{ inputs.from }}
+      environment: ${{ inputs.environment }}
+      AZURE_FUNCTIONAPP_RESOURCEGROUP: ${{ matrix.resource_group }}
+      AZURE_FUNCTIONAPP_NAME: ${{ matrix.name }}
+    secrets:
+      SISU: ${{ secrets.SISU }}
+
+  # rollback:
+  #   runs-on: ubuntu-latest
+  #   needs: swap
+
+  #   steps:
+  #     - name: TODO
+  #       run: echo "TODO"

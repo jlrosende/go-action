@@ -1,6 +1,8 @@
 package create
 
 import (
+	"github.com/jlrosende/go-action/cmd/create/release"
+	"github.com/jlrosende/go-action/cmd/create/snapshot"
 	"github.com/spf13/cobra"
 )
 
@@ -12,6 +14,6 @@ var CreateCmd = &cobra.Command{
 }
 
 func init() {
-	CreateCmd.AddCommand(releaseCmd)
-	CreateCmd.AddCommand(snapshotCmd)
+	CreateCmd.AddCommand(release.ReleaseCmd)
+	CreateCmd.AddCommand(snapshot.SnapshotCmd)
 }

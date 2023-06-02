@@ -58,3 +58,7 @@ environments:
         type: postgresql|mongo
         name: "db-name"
         rg|resource_group|project|account: "resource-group-name"
+
+      vault:
+        rg|resource_group|project|account: "resource-group-name"
+        name: "vault-name"

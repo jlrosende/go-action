@@ -74,15 +74,26 @@ type Vault struct {
 	Name string `json:"name" yaml:"name" mapstructure:"name" validate:"required"`
 }
 
-func LoadConfig(config *Config, cfgFile, dir string) error {
+// TODO Create a new struct for run test
+type Testing struct {
+	Repository string
+	Folder     string
+}
+
+// TODO Create a new struct for select and configure swap functions
+type Swap struct {
+	Mode   string
+	Source string
+	Target string
+}
+
+func LoadConfig(cfgFile string) (*Config, error) {
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
 	} else {
-		if dir == "" {
-			dir = "."
-		}
-		viper.AddConfigPath(dir)
+		viper.AddConfigPath(".")
+		viper.AddConfigPath("./cloud")
 		viper.SetConfigType("yaml")
 		viper.SetConfigName("sisu")
 	}
@@ -93,16 +104,18 @@ func LoadConfig(config *Config, cfgFile, dir string) error {
 		log.Debugf("Using config file: %s", viper.ConfigFileUsed())
 	}
 
-	if err := viper.Unmarshal(config); err != nil {
+	var config Config
+
+	if err := viper.Unmarshal(&config); err != nil {
 		// log.Fatalf("unable to unmarshall the config %v", err)
-		return err
+		return nil, err
 	}
 
 	validate := validator.New()
-	if err := validate.Struct(config); err != nil && viper.ConfigFileUsed() != "" {
+	if err := validate.Struct(&config); err != nil && viper.ConfigFileUsed() != "" {
 		// log.Fatalf("Missing required attributes %v\n", err)
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &config, nil
 }
