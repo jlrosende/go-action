@@ -1,4 +1,4 @@
-package cmd
+package update
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var updateCmd = &cobra.Command{
+var UpdateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "",
 	Long:  ``,

@@ -1,4 +1,4 @@
-package cmd
+package test
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var testCmd = &cobra.Command{
+var TestCmd = &cobra.Command{
 	Use:   "test",
 	Short: "Add git repository containing markdown content files",
 	Long:  ``,
@@ -18,6 +18,6 @@ func init() {
 }
 
 func test(ccmd *cobra.Command, args []string) error {
-	fmt.Println("Deploy funtion")
+	fmt.Println("Test")
 	return nil
 }

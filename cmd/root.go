@@ -11,7 +11,10 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jlrosende/go-action/cmd/create"
+	initMod "github.com/jlrosende/go-action/cmd/init"
 	"github.com/jlrosende/go-action/cmd/matrix"
+	"github.com/jlrosende/go-action/cmd/test"
+	"github.com/jlrosende/go-action/cmd/update"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -46,9 +49,9 @@ func init() {
 
 	rootCmd.AddCommand(create.CreateCmd)
 	rootCmd.AddCommand(matrix.MatrixCmd)
-	rootCmd.AddCommand(initCmd)
-	rootCmd.AddCommand(testCmd)
-	rootCmd.AddCommand(updateCmd)
+	rootCmd.AddCommand(initMod.InitCmd)
+	rootCmd.AddCommand(test.TestCmd)
+	rootCmd.AddCommand(update.UpdateCmd)
 
 }
 

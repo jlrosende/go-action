@@ -1,15 +1,14 @@
-package cmd
+package init
 
 import (
 	"embed"
 	"errors"
 	"os"
+	"path"
 
 	"github.com/manifoldco/promptui"
-	"github.com/sethvargo/go-githubactions"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 
 	conf "github.com/jlrosende/go-action/config"
@@ -20,7 +19,7 @@ var tplDir embed.FS
 
 var (
 	iArgs   = InitArgs{}
-	initCmd = &cobra.Command{
+	InitCmd = &cobra.Command{
 		Use:   "init",
 		Short: "",
 		Long:  ``,
@@ -28,22 +27,99 @@ var (
 	}
 )
 
+const (
+	CLOUD_DIR     = "cloud"
+	SISU_FILENAME = "sisu.yml"
+	GITHUB_DIR    = ".github"
+	WORKFLOWS_DIR = "workflows"
+	ISSUES_DIR    = "ISSUE_TEMPLATE"
+	TEMPLATES_DIR = "templates"
+)
+
+var (
+	SISU_PATH      = path.Join(CLOUD_DIR, SISU_FILENAME)
+	ISSUES_PATH    = path.Join(GITHUB_DIR, ISSUES_DIR)
+	WORKFLOWS_PATH = path.Join(GITHUB_DIR, WORKFLOWS_DIR)
+)
+
 type InitArgs struct {
 	Dir         string `json:"dir" yaml:"dir"`
 	Overwrite   bool   `json:"overwrite" yaml:"overwrite"`
 	Interactive bool   `json:"interactive" yaml:"interactive"`
+
+	Runtime string `json:"runtime" yaml:"runtime"`
+	Cloud   string `json:"cloud" yaml:"cloud"`
 }
 
 func init() {
 
-	initCmd.Flags().StringVarP(&iArgs.Dir, "directory", "d", ".", "Select the init directory (required)")
-	initCmd.Flags().BoolVar(&iArgs.Overwrite, "overwrite", false, "Select the init directory (required)")
-	initCmd.Flags().BoolVar(&iArgs.Interactive, "interactive", true, "Select the init directory (required)")
+	InitCmd.Flags().StringVarP(&iArgs.Dir, "directory", "d", ".", "Select the init directory (required)")
+	InitCmd.Flags().BoolVar(&iArgs.Overwrite, "overwrite", false, "Select the init directory (required)")
+	InitCmd.Flags().BoolVar(&iArgs.Interactive, "interactive", true, "Select the init directory (required)")
+
+	InitCmd.Flags().StringVar(&iArgs.Runtime, "runtime", "", "Select the runtime")
+	InitCmd.Flags().StringVar(&iArgs.Cloud, "cloud", "", "Select the cloud")
 
 }
 
 func initRepo(ccmd *cobra.Command, args []string) {
-	var config conf.Config
+
+	_, err := os.Stat(CLOUD_DIR)
+	if os.IsNotExist(err) {
+		errDir := os.MkdirAll(CLOUD_DIR, 0755)
+		if errDir != nil {
+			log.Fatal(errDir)
+		}
+	}
+
+	_, err = os.Stat(SISU_PATH)
+	if os.IsNotExist(err) {
+		_, errFile := os.Create(SISU_PATH)
+		if errFile != nil {
+			log.Fatal(errFile)
+		}
+	}
+
+	_, err = os.Stat(ISSUES_PATH)
+	if os.IsNotExist(err) {
+		errDir := os.MkdirAll(ISSUES_PATH, 0755)
+		if errDir != nil {
+			log.Fatal(errDir)
+		}
+	}
+
+	issue_files, err := tplDir.ReadDir(path.Join(TEMPLATES_DIR, "issues"))
+	if err != nil {
+		log.Errorf("can not read directory %v\n", err)
+		return
+	}
+
+	for _, issue := range issue_files {
+		src_issue_path := path.Join(TEMPLATES_DIR, "issues", issue.Name())
+
+		fileContent, err := tplDir.ReadFile(src_issue_path)
+		if err != nil {
+			log.Errorf("can not read file %v\n", err)
+			return
+		}
+		dest_issue_path := path.Join(ISSUES_PATH, issue.Name())
+		err = os.WriteFile(dest_issue_path, fileContent, 0666)
+		if err != nil {
+			log.Errorf("can not write file %v\n", err)
+			return
+		}
+		log.Debugf("Write file %s", dest_issue_path)
+	}
+
+	_, err = os.Stat(WORKFLOWS_PATH)
+	if os.IsNotExist(err) {
+		errDir := os.MkdirAll(WORKFLOWS_PATH, 0755)
+		if errDir != nil {
+			log.Fatal(errDir)
+		}
+	}
+
+	// var config conf.Config
 	// tpls, err := template.New("templates").Delims("[[", "]]").ParseFS(templates, "templates/issues/*", "templates/workflows/*")
 	// if err != nil {
 	// 	log.Fatal(err)
@@ -51,46 +127,46 @@ func initRepo(ccmd *cobra.Command, args []string) {
 	// }
 	// log.Infof("%s", tpls.Execute(os.Stdout, []byte{}))
 
-	dirs, err := tplDir.ReadDir("templates")
-	if err != nil {
-		log.Errorf("can not read directory %v\n", err)
-		return
-	}
+	// dirs, err := tplDir.ReadDir(TEMPLATES_DIR)
+	// if err != nil {
+	// 	log.Errorf("can not read directory %v\n", err)
+	// 	return
+	// }
 
-	for i, d := range dirs {
-		log.Infof("%d %s", i, d.Name())
-	}
+	// for i, d := range dirs {
+	// 	log.Infof("%d %s", i, d.Name())
+	// }
 
-	var existConf bool = false
+	// var existConf bool = false
 
-	// Check if config already exist
-	log.Trace(viper.ConfigFileUsed())
-	if viper.ConfigFileUsed() != "" {
-		log.Trace("Config file already exist")
-		existConf = true
-	}
+	// // Check if config already exist
+	// log.Trace(viper.ConfigFileUsed())
+	// if viper.ConfigFileUsed() != "" {
+	// 	log.Trace("Config file already exist")
+	// 	existConf = true
+	// }
 
-	overwrite := false
-	if !iArgs.Overwrite && existConf {
-		log.Info("Sobreescribir")
-		overwrite = overwriteForm()
-	}
+	// overwrite := false
+	// if !iArgs.Overwrite && existConf {
+	// 	log.Info("Sobreescribir")
+	// 	overwrite = overwriteForm()
+	// }
 
-	if iArgs.Interactive {
-		config = *form()
-	}
+	// if iArgs.Interactive {
+	// 	config = *form()
+	// }
 
-	if iArgs.Overwrite || overwrite || !existConf {
-		saveConfig(config)
-	}
+	// if iArgs.Overwrite || overwrite || !existConf {
+	// 	saveConfig(config)
+	// }
 
-	response, err := yaml.Marshal(iArgs)
-	if err != nil {
-		githubactions.Errorf("ERROR: %s", err.Error())
-		log.Fatal(err)
-		return
-	}
-	githubactions.SetOutput("args", string(response))
+	// response, err := yaml.Marshal(iArgs)
+	// if err != nil {
+	// 	githubactions.Errorf("ERROR: %s", err.Error())
+	// 	log.Fatal(err)
+	// 	return
+	// }
+	// githubactions.SetOutput("args", string(response))
 
 	// log.Info(dir)
 	// log.Info("Init")
@@ -223,47 +299,36 @@ func saveConfig(config conf.Config) {
 	fp.Write(data)
 }
 
-func form() *conf.Config {
-	// example config
-	return defaultConf()
-	// new environment
-
-	// new function
-
-}
-
-func defaultConf() *conf.Config {
+func defaultConf(cloud, runtime, region string) *conf.Config {
 	return &conf.Config{
-		Version: rootCmd.Version,
+		Version: "0.0.0",
 		Env: map[string][]conf.Function{
-			"dev": {
-				{
-					Name:          "funtion-name-dev",
-					Type:          "back",
+			"dev": {{
+				Name:          "funtion-name-dev",
+				Type:          "back",
+				ResourceGroup: "resource-group-name",
+				PackagePath:   "./code/dist/",
+				Region:        region,
+				Cloud:         cloud,
+				Runtime:       runtime,
+				Database: &conf.Database{
 					ResourceGroup: "resource-group-name",
-					PackagePath:   "./code/dist/",
-					Region:        "westeurope",
-					Cloud:         "azure",
-					Runtime:       "java11",
-					Database: &conf.Database{
-						ResourceGroup: "resource-group-name",
-						Name:          "db-name",
-						Type:          "postgresql",
-					},
-					Vault: &conf.Vault{
-						ResourceGroup: "resource-group-name",
-						Name:          "vault-name",
-					},
+					Name:          "db-name",
+					Type:          "postgresql",
 				},
-			},
+				Vault: &conf.Vault{
+					ResourceGroup: "resource-group-name",
+					Name:          "vault-name",
+				},
+			}},
 			"pre": {{
 				Name:          "funtion-name-pre",
 				Type:          "back",
 				ResourceGroup: "resource-group-name",
 				PackagePath:   "./code/dist/",
-				Region:        "westeurope",
-				Cloud:         "azure",
-				Runtime:       "java11",
+				Region:        region,
+				Cloud:         cloud,
+				Runtime:       runtime,
 				Database: &conf.Database{
 					ResourceGroup: "resource-group-name",
 					Name:          "db-name",
@@ -279,9 +344,9 @@ func defaultConf() *conf.Config {
 				Type:          "back",
 				ResourceGroup: "resource-group-name",
 				PackagePath:   "./code/dist/",
-				Region:        "westeurope",
-				Cloud:         "azure",
-				Runtime:       "java11",
+				Region:        region,
+				Cloud:         cloud,
+				Runtime:       runtime,
 				Database: &conf.Database{
 					ResourceGroup: "resource-group-name",
 					Name:          "db-name",
