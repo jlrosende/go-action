@@ -20,9 +20,10 @@ var (
 )
 
 type CreateSnapshotArgs struct {
-	Env  string `json:"env"`
-	From string `json:"from"`
-	To   string `json:"to"`
+	Env          string `json:"env"`
+	From         string `json:"from"`
+	To           string `json:"to"`
+	ForceRebuild bool   `json:"force-rebuild"`
 }
 
 func init() {
@@ -32,9 +33,11 @@ func init() {
 	SnapshotCmd.MarkFlagRequired("environment")
 	SnapshotCmd.MarkFlagRequired("from")
 	SnapshotCmd.MarkFlagsRequiredTogether("environment", "from", "to")
+
+	SnapshotCmd.Flags().BoolVar(&csArgs.ForceRebuild, "force-rebuild", false, "Force build and compilation of the artifact.")
 }
 
-func snapshot(ccmd *cobra.Command, args []string) {
+func snapshot(cmd *cobra.Command, args []string) {
 	response, err := json.Marshal(csArgs)
 	if err != nil {
 		githubactions.Errorf("ERROR: %s", err.Error())

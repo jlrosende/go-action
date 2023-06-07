@@ -1,12 +1,15 @@
 package init
 
 import (
+	"bytes"
 	"embed"
 	"errors"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/manifoldco/promptui"
+	"github.com/sethvargo/go-githubactions"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -43,28 +46,60 @@ var (
 )
 
 type InitArgs struct {
-	Dir         string `json:"dir" yaml:"dir"`
-	Overwrite   bool   `json:"overwrite" yaml:"overwrite"`
-	Interactive bool   `json:"interactive" yaml:"interactive"`
-
 	Runtime string `json:"runtime" yaml:"runtime"`
 	Cloud   string `json:"cloud" yaml:"cloud"`
+	Region  string `json:"region" yaml:"region"`
 }
 
 func init() {
 
-	InitCmd.Flags().StringVarP(&iArgs.Dir, "directory", "d", ".", "Select the init directory (required)")
-	InitCmd.Flags().BoolVar(&iArgs.Overwrite, "overwrite", false, "Select the init directory (required)")
-	InitCmd.Flags().BoolVar(&iArgs.Interactive, "interactive", true, "Select the init directory (required)")
-
 	InitCmd.Flags().StringVar(&iArgs.Runtime, "runtime", "", "Select the runtime")
 	InitCmd.Flags().StringVar(&iArgs.Cloud, "cloud", "", "Select the cloud")
+	InitCmd.Flags().StringVar(&iArgs.Cloud, "region", "", "Select the region")
 
 }
 
-func initRepo(ccmd *cobra.Command, args []string) {
+func initRepo(cmd *cobra.Command, args []string) {
 
-	_, err := os.Stat(CLOUD_DIR)
+	_, err := os.Stat(ISSUES_PATH)
+	if os.IsNotExist(err) {
+		errDir := os.MkdirAll(ISSUES_PATH, 0755)
+		if errDir != nil {
+			log.Fatal(errDir)
+		}
+	}
+
+	err = DirectoryFromTemplate(ISSUES_PATH, path.Join(TEMPLATES_DIR, "issues"))
+	if err != nil {
+		log.Errorf("ISSUES: %v\n", err)
+		return
+	}
+
+	if iArgs.Runtime == "" {
+		iArgs.Runtime = selectRuntime()
+	}
+
+	var lang string = ""
+	switch strings.ToLower(iArgs.Runtime) {
+	case "java11", "java17":
+		lang = "java"
+	case "node16", "node18":
+		lang = "node"
+	case "go119", "go120":
+		lang = "go"
+	default:
+		lang = "java"
+	}
+
+	err = DirectoryFromTemplate(WORKFLOWS_PATH, path.Join(TEMPLATES_DIR, "workflows", lang))
+	if err != nil {
+		log.Errorf("WORKFLOWS: %v\n", err)
+		return
+	}
+
+	config := defaultConf(iArgs.Cloud, iArgs.Runtime, iArgs.Region)
+
+	_, err = os.Stat(CLOUD_DIR)
 	if os.IsNotExist(err) {
 		errDir := os.MkdirAll(CLOUD_DIR, 0755)
 		if errDir != nil {
@@ -74,112 +109,31 @@ func initRepo(ccmd *cobra.Command, args []string) {
 
 	_, err = os.Stat(SISU_PATH)
 	if os.IsNotExist(err) {
-		_, errFile := os.Create(SISU_PATH)
-		if errFile != nil {
-			log.Fatal(errFile)
+		err := saveConfig(SISU_PATH, config)
+		if err != nil {
+			log.Errorf("SISU CONF: %v\n", err)
+			return
 		}
 	}
 
-	_, err = os.Stat(ISSUES_PATH)
-	if os.IsNotExist(err) {
-		errDir := os.MkdirAll(ISSUES_PATH, 0755)
-		if errDir != nil {
-			log.Fatal(errDir)
-		}
-	}
-
-	issue_files, err := tplDir.ReadDir(path.Join(TEMPLATES_DIR, "issues"))
+	response, err := yaml.Marshal(iArgs)
 	if err != nil {
-		log.Errorf("can not read directory %v\n", err)
+		githubactions.Errorf("ERROR: %s", err.Error())
+		log.Errorf("GITHUB_OUTPUT: %v\n", err)
 		return
 	}
-
-	for _, issue := range issue_files {
-		src_issue_path := path.Join(TEMPLATES_DIR, "issues", issue.Name())
-
-		fileContent, err := tplDir.ReadFile(src_issue_path)
-		if err != nil {
-			log.Errorf("can not read file %v\n", err)
-			return
-		}
-		dest_issue_path := path.Join(ISSUES_PATH, issue.Name())
-		err = os.WriteFile(dest_issue_path, fileContent, 0666)
-		if err != nil {
-			log.Errorf("can not write file %v\n", err)
-			return
-		}
-		log.Debugf("Write file %s", dest_issue_path)
-	}
-
-	_, err = os.Stat(WORKFLOWS_PATH)
-	if os.IsNotExist(err) {
-		errDir := os.MkdirAll(WORKFLOWS_PATH, 0755)
-		if errDir != nil {
-			log.Fatal(errDir)
-		}
-	}
-
-	// var config conf.Config
-	// tpls, err := template.New("templates").Delims("[[", "]]").ParseFS(templates, "templates/issues/*", "templates/workflows/*")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// 	return
-	// }
-	// log.Infof("%s", tpls.Execute(os.Stdout, []byte{}))
-
-	// dirs, err := tplDir.ReadDir(TEMPLATES_DIR)
-	// if err != nil {
-	// 	log.Errorf("can not read directory %v\n", err)
-	// 	return
-	// }
-
-	// for i, d := range dirs {
-	// 	log.Infof("%d %s", i, d.Name())
-	// }
-
-	// var existConf bool = false
-
-	// // Check if config already exist
-	// log.Trace(viper.ConfigFileUsed())
-	// if viper.ConfigFileUsed() != "" {
-	// 	log.Trace("Config file already exist")
-	// 	existConf = true
-	// }
-
-	// overwrite := false
-	// if !iArgs.Overwrite && existConf {
-	// 	log.Info("Sobreescribir")
-	// 	overwrite = overwriteForm()
-	// }
-
-	// if iArgs.Interactive {
-	// 	config = *form()
-	// }
-
-	// if iArgs.Overwrite || overwrite || !existConf {
-	// 	saveConfig(config)
-	// }
-
-	// response, err := yaml.Marshal(iArgs)
-	// if err != nil {
-	// 	githubactions.Errorf("ERROR: %s", err.Error())
-	// 	log.Fatal(err)
-	// 	return
-	// }
-	// githubactions.SetOutput("args", string(response))
-
-	// log.Info(dir)
-	// log.Info("Init")
-	// log.Info("Create sisu.yml")
-	// log.Info("Create actions")
-	// log.Info("-- Deploy AZF [0 - ]")
-	// log.Info("-- PR Int/Unit Test [1 - ]")
-	// log.Info("-- Create Release [2 - ]")
-	// log.Info("-- Create Snapshot [2 - ]")
+	githubactions.SetOutput("args", string(response))
 }
 
 func selectRuntime() string {
-	items := []string{"java11", "java17", "node16", "node18"}
+	items := []string{
+		"java11",
+		"java17",
+		"node16",
+		"node18",
+		"g119",
+		"go120",
+	}
 	index := -1
 	var result string
 	var err error
@@ -262,41 +216,55 @@ func selectRegion() string {
 
 }
 
-func overwriteForm() bool {
-	prompt := promptui.Select{
-		Label: "Overwrite?[Yes/No]",
-		Items: []string{"Yes", "No"},
-	}
-	_, result, err := prompt.Run()
+func saveConfig(filePath string, config *conf.Config) error {
+	var b bytes.Buffer
+	ymlEncoder := yaml.NewEncoder(&b)
+	ymlEncoder.SetIndent(2)
+	ymlEncoder.Encode(config)
+	// data, err := yaml.Marshal(config)
+	log.Tracef("\n%s", string(b.Bytes()))
+	// if err != nil {
+	// 	return err
+	// }
+
+	fp, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
-		log.Fatalf("Prompt failed %v\n", err)
-	}
-	return result == "Yes"
-}
-
-func functionForm() conf.Function {
-	return conf.Function{}
-}
-
-func environmentForm() map[string][]conf.Function {
-	return map[string][]conf.Function{}
-}
-
-func saveConfig(config conf.Config) {
-	data, err := yaml.Marshal(config)
-	log.Tracef("\n%s", string(data))
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	fp, err := os.OpenFile("sisu.yaml", os.O_RDWR|os.O_CREATE, 0644)
-	if err != nil {
-		log.Fatal(err)
-		return
+		return err
 	}
 	defer fp.Close()
-	fp.Write(data)
+	fp.Write(b.Bytes())
+	return nil
+}
+
+func DirectoryFromTemplate(directory, template string) error {
+	_, err := os.Stat(directory)
+	if os.IsNotExist(err) {
+		err := os.MkdirAll(directory, 0755)
+		if err != nil {
+			return err
+		}
+	}
+
+	tmpl_files, err := tplDir.ReadDir(template)
+	if err != nil {
+		return err
+	}
+
+	for _, tmpl := range tmpl_files {
+		src_tmpl_path := path.Join(template, tmpl.Name())
+
+		fileContent, err := tplDir.ReadFile(src_tmpl_path)
+		if err != nil {
+			return err
+		}
+		dest_tmpl_path := path.Join(directory, tmpl.Name())
+		err = os.WriteFile(dest_tmpl_path, fileContent, 0666)
+		if err != nil {
+			return err
+		}
+		log.Debugf("Write file %s", dest_tmpl_path)
+	}
+	return nil
 }
 
 func defaultConf(cloud, runtime, region string) *conf.Config {
@@ -320,6 +288,11 @@ func defaultConf(cloud, runtime, region string) *conf.Config {
 					ResourceGroup: "resource-group-name",
 					Name:          "vault-name",
 				},
+				Swap: conf.Swap{
+					Mode:        "slot",
+					FrontDoor:   nil,
+					AppInsights: nil,
+				},
 			}},
 			"pre": {{
 				Name:          "funtion-name-pre",
@@ -338,6 +311,11 @@ func defaultConf(cloud, runtime, region string) *conf.Config {
 					ResourceGroup: "resource-group-name",
 					Name:          "vault-name",
 				},
+				Swap: conf.Swap{
+					Mode:        "slot",
+					FrontDoor:   nil,
+					AppInsights: nil,
+				},
 			}},
 			"pro": {{
 				Name:          "funtion-name-pro",
@@ -355,6 +333,11 @@ func defaultConf(cloud, runtime, region string) *conf.Config {
 				Vault: &conf.Vault{
 					ResourceGroup: "resource-group-name",
 					Name:          "vault-name",
+				},
+				Swap: conf.Swap{
+					Mode:        "slot",
+					FrontDoor:   nil,
+					AppInsights: nil,
 				},
 			}},
 		},

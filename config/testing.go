@@ -1,6 +1,5 @@
 package config
 
 type Testing struct {
-	Repository string
-	Folder     string
+	Repository string `json:"repository" yaml:"repository" mapstructure:"repository" validate:"required"`
 }

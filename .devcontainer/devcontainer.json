@@ -3,15 +3,19 @@
 {
 	"name": "Go",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/go:0-1-bullseye",
-	// Features to add to the dev container. More info: https://containers.dev/features.
-	"features": {
-		"ghcr.io/devcontainers/features/docker-in-docker:2": {
-			"installDockerBuildx": true,
-			"version": "latest",
-			"dockerDashComposeVersion": "v2"
-		}
+	// "image": "mcr.microsoft.com/devcontainers/go:0-1-bullseye",
+	"build": {
+		// Path is relataive to the devcontainer.json file.
+		"dockerfile": "Dockerfile"
 	},
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	// "features": {
+	// 	"ghcr.io/devcontainers/features/docker-in-docker:2": {
+	// 		"installDockerBuildx": true,
+	// 		"version": "latest",
+	// 		"dockerDashComposeVersion": "v2"
+	// 	}
+	// },
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 	// Use 'postCreateCommand' to run commands after the container is created.
@@ -21,7 +25,7 @@
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "root"
 	"containerEnv": {
-		"GITHUB_OUTPUT": "temp/output.txt"
+		"GITHUB_OUTPUT": "/dev/stdout"
 	},
 	"customizations": {
 		"vscode": {

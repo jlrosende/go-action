@@ -17,7 +17,7 @@ func init() {
 
 }
 
-func update(ccmd *cobra.Command, args []string) error {
+func update(cmd *cobra.Command, args []string) error {
 	fmt.Println("Update")
 	return nil
 }

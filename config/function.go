@@ -27,4 +27,8 @@ type Function struct {
 	Database *Database `json:"db,omitempty" yaml:"db,omitempty" mapstructure:"db,omitempty" validate:"omitempty,dive"`
 
 	Vault *Vault `json:"vault,omitempty" yaml:"vault,omitempty" mapstructure:"vault,omitempty" validate:"omitempty,dive"`
+
+	Testing *Testing `json:"testing,omitempty" yaml:"testing,omitempty" mapstructure:"testing,omitempty" validate:"omitempty,dive"`
+
+	Swap Swap `json:"swap" yaml:"swap" mapstructure:"swap" validate:"required,dive"`
 }

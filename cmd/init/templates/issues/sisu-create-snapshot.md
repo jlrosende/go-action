@@ -17,12 +17,12 @@ Aliases:
 
 Flags:
   -e, --environment string   Select the environment (required)
-  -f, --from string          Select the tag, branch or commit (required)
-  -t, --to string            Select the destination branch (required)
+      --force-rebuild        Force build and compilation of the artifact.
+  -f, --from string          Select the origin tag, branch or commit (required)
   -h, --help                 help for snapshot
+  -t, --to string            Select the destination branch (required)
 
 Global Flags:
-      --config string       config file (default is sisu.{yml,yaml})
       --log-format string   Log format (logfmt, json, text)
   -l, --log-level string    Log level (trace, debug, info, warn, error, fatal, panic (default "info")
 ```

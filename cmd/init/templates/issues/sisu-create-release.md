@@ -17,13 +17,13 @@ Aliases:
 
 Flags:
   -e, --environment string   Select the environment (required)
+      --force-rebuild        Force build and compilation of the artifact.
   -f, --from string          Select the tag, branch or commit (required)
   -h, --help                 help for release
-  -i, --increment string     TODO (default "patch")
-  -v, --version string       TODO
+  -i, --increment string     Select which part of version is autoincremented (patch, minor, major) (default: patch) (default "patch")
+  -v, --version string       Manualy set the version, disable autoincrement
 
 Global Flags:
-      --config string       config file (default is sisu.{yml,yaml})
       --log-format string   Log format (logfmt, json, text)
   -l, --log-level string    Log level (trace, debug, info, warn, error, fatal, panic (default "info")
 ```

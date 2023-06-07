@@ -17,7 +17,7 @@ on:
 
 jobs:
   unit-test:
-    uses: inditex/lib-sisucommonsgh/.github/workflows/unit-test-java.yml@v2.0.0-java-alpha.6
+    uses: inditex/lib-sisucommonsgh/.github/workflows/unit-test-java.yml@v2.0.0-java-alpha.7
     with:
       from: ${{ inputs.from }}
     secrets:
@@ -28,7 +28,7 @@ jobs:
       GH_TOKEN_READER: ${{ secrets.GH_TOKEN_READER }}
 
   integration-test:
-    uses: inditex/lib-sisucommonsgh/.github/workflows/integration-test-java.yml@v2.0.0-java-alpha.6
+    uses: inditex/lib-sisucommonsgh/.github/workflows/integration-test-java.yml@v2.0.0-java-alpha.7
     with:
       from: ${{ inputs.from }}
     secrets:

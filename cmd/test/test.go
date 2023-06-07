@@ -17,7 +17,7 @@ func init() {
 
 }
 
-func test(ccmd *cobra.Command, args []string) error {
+func test(cmd *cobra.Command, args []string) error {
 	fmt.Println("Test")
 	return nil
 }

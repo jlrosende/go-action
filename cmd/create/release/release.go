@@ -41,11 +41,11 @@ func init() {
 	ReleaseCmd.Flags().StringVarP(&crArgs.Increment, "increment", "i", "patch", "Select which part of version is autoincremented (patch, minor, major) (default: patch)")
 	ReleaseCmd.MarkFlagsMutuallyExclusive("version", "increment")
 
-	ReleaseCmd.Flags().BoolVar(&crArgs.ForceRebuild, "force-rebuild", false, "Force build and the compilation of artifact.")
+	ReleaseCmd.Flags().BoolVar(&crArgs.ForceRebuild, "force-rebuild", false, "Force build and compilation of the artifact.")
 
 }
 
-func release(ccmd *cobra.Command, args []string) {
+func release(cmd *cobra.Command, args []string) {
 
 	// Validate args
 	bumpOps := []string{"patch", "minor", "major"}
