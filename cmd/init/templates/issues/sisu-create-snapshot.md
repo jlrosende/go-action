@@ -45,6 +45,12 @@ Global Flags:
 /sisu create snapshot --environment <env> --from <branch/commit/tag> --to <branch>
 ```
 
+**Create a snapshot and force rebuild artifact**
+
+```
+/sisu create snapshot --environment <env> --from <branch/commit/tag> --to <branch> --force-rebuild
+```
+
 ### Further information
 
 TODO Aqui va el enlace a la documentacion

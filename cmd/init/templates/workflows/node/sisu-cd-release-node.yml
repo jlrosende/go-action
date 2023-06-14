@@ -79,7 +79,7 @@ jobs:
           echo "new_tag=${tag}" >> $GITHUB_OUTPUT
 
       - name: Create Release
-        continue-on-error: ${{ inputs.force || contains(github.event.pull_request.labels.*.name, 'sisu/force-rebuild') }}
+        continue-on-error: ${{ inputs.force || contains(github.event.pull_request.labels.*.name, 'sisu/force-rebuild')}}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NEW_TAG: ${{ steps.get_tag.outputs.new_tag }}
@@ -130,7 +130,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: inditex/lib-sisucommonsgh
-          ref: v2.0.0-java-alpha.9
+          ref: v2.0.0-node-alpha.9
           path: ./.github/actions/
           token: ${{ secrets.GH_TOKEN_READER }}
 
@@ -146,7 +146,7 @@ jobs:
     needs:
       - release_matrix
       - create_tag_release
-    uses: inditex/lib-sisucommonsgh/.github/workflows/build-azf-java.yml@v2.0.0-java-alpha.9
+    uses: inditex/lib-sisucommonsgh/.github/workflows/build-azf-node.yml@v2.0.0-node-alpha.9
 
     strategy:
       fail-fast: false
@@ -156,13 +156,10 @@ jobs:
     with:
       from: ${{ needs.create_tag_release.outputs.new_tag }}
       environment: pro
-      cloud: ${{ matrix.cloud }}
       AZURE_FUNCTIONAPP_RESOURCEGROUP: ${{ matrix.resource_group }}
       AZURE_FUNCTIONAPP_NAME: ${{ matrix.name }}
       PACKAGE_PATH: ${{ matrix.package_path }}
       functions: ${{ toJSON(matrix.functions) }}
-      java_version: ${{ matrix.runtime }}
-      force: ${{ inputs.force || contains(github.event.pull_request.labels.*.name, 'sisu/force-rebuild') }}
     secrets:
       SISU: ${{ secrets.SISU }}
       DIST_PLAT_DEPLOYER_USERNAME: ${{ secrets.DIST_PLAT_DEPLOYER_USERNAME }}

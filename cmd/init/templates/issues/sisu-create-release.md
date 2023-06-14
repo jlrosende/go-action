@@ -46,6 +46,12 @@ Global Flags:
 /sisu create release --environment <env> --from <branch/commit/tag>
 ```
 
+**Create a release with automatic incremental patch and force rebuild the code**
+
+```
+/sisu create release --environment <env> --from <branch/commit/tag> --force-rebuild
+```
+
 **Create a release with automatic incremental minor**
 
 ```

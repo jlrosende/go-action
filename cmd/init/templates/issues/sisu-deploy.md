@@ -9,22 +9,25 @@ assignees: ""
 ## Usage
 
 ```
+Run a deployment and create a matrix of functions filtered with the command args.
+
 Usage:
-  sisu deploy [flags]
+  sisu matrix [flags]
 
 Aliases:
-  deploy, d
+  deploy, d,
 
 Flags:
   -c, --cloud string         Regex to select which matrix options are select by cloud (default ".*")
+      --config string        config file (default is sisu.{yml,yaml})
   -e, --environment string   Select the environment to be matrixed (required)
   -f, --from string          Select the tag, branch or commit to be matrixed (required)
   -h, --help                 help for matrix
   -n, --name string          Regex to select the matrix options from the list (default ".*")
   -r, --region string        Regex to select which matrix options are select by region (default ".*")
+      --run-db               Run the action to deploy database configuration (default true)
 
 Global Flags:
-      --config string       config file (default is sisu.{yml,yaml})
       --log-format string   Log format (logfmt, json, text)
   -l, --log-level string    Log level (trace, debug, info, warn, error, fatal, panic (default "info")
 ```
@@ -45,6 +48,12 @@ Global Flags:
 
 ```
 /sisu deploy --environment <env> --from <branch/commit/tag>
+```
+
+**Run a deployment form a code source, in a selected environment and disable liquibase step**
+
+```
+/sisu deploy --environment <env> --from <branch/commit/tag> --run-db false
 ```
 
 **Run a deployment form a code source, in a selected environment, filter functions by region**

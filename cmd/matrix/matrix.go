@@ -33,6 +33,7 @@ type MatrixArgs struct {
 	Region string `json:"region,omitempty"`
 	Name   string `json:"name,omitempty"`
 	Cloud  string `json:"cloud,omitempty"`
+	RunBD bool   `json:"run-db"`
 }
 
 func init() {
@@ -53,6 +54,8 @@ func init() {
 	MatrixCmd.Flags().StringVarP(&mArgs.Cloud, "cloud", "c", ".*", "Regex to select which matrix options are select by cloud")
 
 	MatrixCmd.Flags().StringVar(&cfgFile, "config", "", "config file (default is sisu.{yml,yaml})")
+	
+	MatrixCmd.Flags().BoolVar(&mArgs.RunBD, "run-db", true, "Run the action to deploy database configuration")
 
 }
 

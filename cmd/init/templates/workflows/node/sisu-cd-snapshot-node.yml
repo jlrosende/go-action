@@ -23,11 +23,6 @@ on:
         type: string
         required: false
         default: ""
-      force:
-        description: "Forces the creation of the snapshot even if it already exists."
-        type: boolean
-        required: false
-        default: false
 
   workflow_call:
     inputs:
@@ -90,7 +85,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: inditex/lib-sisucommonsgh
-          ref: v2.0.0-java-alpha.9
+          ref: v2.0.0-node-alpha.9
           path: ./.github/actions/
           token: ${{ secrets.GH_TOKEN_READER }}
 
@@ -105,7 +100,7 @@ jobs:
   build:
     needs:
       - snapshot_matrix
-    uses: inditex/lib-sisucommonsgh/.github/workflows/build-azf-java.yml@v2.0.0-java-alpha.5
+    uses: inditex/lib-sisucommonsgh/.github/workflows/build-azf-node.yml@v2.0.0-node-alpha.5
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.snapshot_matrix.outputs.function_matrix) }}
@@ -113,13 +108,10 @@ jobs:
     with:
       from: ${{ inputs.from || github.ref }}
       environment: ${{ inputs.environment || needs.snapshot_matrix.outputs.env }}
-      cloud: ${{ matrix.cloud }}
       AZURE_FUNCTIONAPP_RESOURCEGROUP: ${{ matrix.resource_group }}
       AZURE_FUNCTIONAPP_NAME: ${{ matrix.name }}
       PACKAGE_PATH: ${{ matrix.package_path }}
       functions: ${{ toJSON(matrix.functions) }}
-      java_version: ${{ matrix.runtime }}
-      force: ${{ inputs.force || contains(github.event.pull_request.labels.*.name, 'sisu/force-rebuild') }}
     secrets:
       SISU: ${{ secrets.SISU }}
       DIST_PLAT_DEPLOYER_USERNAME: ${{ secrets.DIST_PLAT_DEPLOYER_USERNAME }}
