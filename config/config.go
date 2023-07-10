@@ -6,6 +6,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+const Version = "v2.0.0-java.alpha.43"
+
 type Config struct {
 	Version string                `yaml:"version" mapstructure:"version" validate:"required"`
 	Env     map[string][]Function `yaml:"environments" mapstructure:"environments" validate:"required,dive,dive"`

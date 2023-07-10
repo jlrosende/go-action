@@ -1,19 +1,29 @@
 name: 1 - SISU CI - Node
 
 on:
-  pull_request:
   workflow_dispatch:
     inputs:
       from:
         description: Branch, commit or release to run Tests
         default: ""
         required: false
+  pull_request:
+    paths:
+      - cloud/**
+      - code/**
+      - db/**
+      - .github/workflows/**
+
+env:
+  WORKFLOW_VERSION: << .Version >>
+  UPDATE_WORKFLOW: true
 
 jobs:
   unit-test:
-    uses: inditex/lib-sisucommonsgh/.github/workflows/unit-test-node.yml@main
+    uses: inditex/lib-sisucommonsgh/.github/workflows/unit-test-node.yml@v2.0.0-node-alpha.1
     with:
       from: ${{ inputs.from }}
+      node_version: node18
     secrets:
       DIST_PLAT_READER_USERNAME: ${{ secrets.DIST_PLAT_READER_USERNAME }}
       DIST_PLAT_READER_TOKEN: ${{ secrets.DIST_PLAT_READER_TOKEN }}
@@ -22,9 +32,10 @@ jobs:
       GH_TOKEN_READER: ${{ secrets.GH_TOKEN_READER }}
 
   integration-test:
-    uses: inditex/lib-sisucommonsgh/.github/workflows/integration-test-node.yml@main
+    uses: inditex/lib-sisucommonsgh/.github/workflows/integration-test-node.yml@v2.0.0-node-alpha.1
     with:
       from: ${{ inputs.from }}
+      node_version: node18
     secrets:
       DIST_PLAT_READER_USERNAME: ${{ secrets.DIST_PLAT_READER_USERNAME }}
       DIST_PLAT_READER_TOKEN: ${{ secrets.DIST_PLAT_READER_TOKEN }}

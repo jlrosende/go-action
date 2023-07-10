@@ -8,6 +8,8 @@ on:
 permissions: write-all
 
 env:
+  WORKFLOW_VERSION: << .Version >>
+  UPDATE_WORKFLOW: true
   SCM_EMAIL: srvcibot@inditex.com
   SCM_TOKEN: ${{ secrets.GH_TOKEN_PUSH }}
   SCM_USERNAME: butler-ci-bot
@@ -66,7 +68,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: inditex/lib-sisucommonsgh
-          ref: v2.0.0-node-alpha.9
+          ref: v2.0.0-node-alpha.1
           path: ./.github/actions/
           token: ${{ secrets.GH_TOKEN_READER }}
 
@@ -136,7 +138,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: inditex/lib-sisucommonsgh
-          ref: v2.0.0-node-alpha.9
+          ref: v2.0.0-node-alpha.1
           path: ./.github/actions/
           token: ${{ secrets.GH_TOKEN_READER }}
 
@@ -154,8 +156,9 @@ jobs:
           env: ${{ fromJSON(steps.cmd_deploy.outputs.args).env }}
           cloud: ${{ fromJSON(steps.cmd_deploy.outputs.args).cloud }}
           name: ${{ fromJSON(steps.cmd_deploy.outputs.args).name }}
+          run_db: ${{ fromJSON(steps.cmd_deploy.outputs.args).run-db }}
         run: |
-          echo "{ \"from\": \"$from\", \"environment\": \"$env\", \"extra_args\": \"--cloud $cloud --name $name\" }" | gh workflow run sisu-cd-deploy-node.yml --json -r  ${{ github.event.repository.default_branch }}
+          echo "{ \"from\": \"$from\", \"environment\": \"$env\", \"extra_args\": \"--cloud $cloud --name $name\", \"run_db\": $run_db }}" | gh workflow run sisu-cd-deploy-node.yml --json -r  ${{ github.event.repository.default_branch }}
 
   snapshot:
     if: ${{ needs.parse_cmd.outputs.snapshot == 'true' }}
@@ -173,7 +176,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: inditex/lib-sisucommonsgh
-          ref: v2.0.0-node-alpha.9
+          ref: v2.0.0-node-alpha.1
           path: ./.github/actions/
           token: ${{ secrets.GH_TOKEN_READER }}
 

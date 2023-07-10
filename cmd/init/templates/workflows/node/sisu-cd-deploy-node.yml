@@ -16,6 +16,11 @@ on:
         type: string
         required: false
         default: ""
+      run_db:
+        description: Enabled the action to deploy database configuration
+        type: boolean
+        required: false
+        default: true
     secrets:
       SISU:
         required: true
@@ -45,19 +50,112 @@ on:
         type: string
         required: false
         default: ""
+      run_db:
+        description: Enabled the action to deploy database configuration
+        type: boolean
+        required: false
+        default: true
+
+env:
+  WORKFLOW_VERSION: << .Version >>
+  UPDATE_WORKFLOW: true
 
 jobs:
+  parse:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.parse.outputs.version }}
+      type: ${{ steps.parse.outputs.type }}
+
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.from }}
+
+      - name: Filter by type (release or snapshot)
+        id: parse
+        env:
+          version: ${{ inputs.from }}
+        run: |
+          if [ $(git tag -l "$version") ]; then
+            echo "version=$version" >> $GITHUB_OUTPUT
+            echo "type=release" >> $GITHUB_OUTPUT
+            type="release"
+          else
+            echo "version=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+            echo "type=snapshot" >> $GITHUB_OUTPUT
+            type="snapshot"
+          fi
+
   artifact:
-    uses: inditex/lib-sisucommonsgh/.github/workflows/check-artifact.yml@v2.0.0-node-alpha.8
-    with:
-      from: ${{ inputs.from }}
-      environment: ${{ inputs.environment }}
-      extra_args: ${{ inputs.extra_args }}
-    secrets:
-      SISU: ${{ secrets.SISU }}
-      DIST_PLAT_DEPLOYER_USERNAME: ${{ secrets.DIST_PLAT_DEPLOYER_USERNAME }}
-      DIST_PLAT_DEPLOYER_TOKEN: ${{ secrets.DIST_PLAT_DEPLOYER_TOKEN }}
-      GH_TOKEN_READER: ${{ secrets.GH_TOKEN_READER }}
+    needs:
+      - parse
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.find.outputs.build }}
+      function_matrix: ${{ steps.matrix.outputs.function_matrix }}
+
+    steps:
+      - name: Init Jfrog Cli
+        uses: jfrog/setup-jfrog-cli@v3
+
+      - name: Checkout the repo
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Checkout SISU Actions
+        uses: actions/checkout@v3
+        with:
+          repository: inditex/lib-sisucommonsgh
+          ref: v2.0.0-java-alpha.10
+          path: ./.github/actions/
+          token: ${{ secrets.GH_TOKEN_READER }}
+
+      # TODO Añadir action que genere el matrix
+      - name: Create Deployment Matrix
+        id: matrix
+        uses: ./.github/actions/sisu
+        with:
+          args: matrix -e ${{ inputs.environment }} -f ${{ inputs.from }} ${{ inputs.extra_args }}
+
+      - name: Find artifacts
+        id: find
+        env:
+          JF_URL: ${{ env.JF_URL }}
+          JF_USER: ${{ secrets.DIST_PLAT_DEPLOYER_USERNAME }}
+          JF_PASSWORD: ${{ secrets.DIST_PLAT_DEPLOYER_TOKEN }}
+          type: ${{ needs.parse.outputs.type }}
+          version: ${{ needs.parse.outputs.version }}
+        run: |
+          functions=$(echo ${{ toJSON(steps.matrix.outputs.function_matrix) }} | jq -r ".[] | .name")
+          for name in $functions; do
+            if [[ $type = "release" ]]; then
+              exist=$(jf rt s function-release-local/sisu/$name/$version --url $JF_URL --user=$JF_USER --password="$JF_PASSWORD" --count)
+            else
+              exist=$(jf rt s function-snapshot-local/sisu/$name/$version --url $JF_URL --user=$JF_USER --password="$JF_PASSWORD" --count)
+            fi
+
+            if [[ $exist -eq 0 ]]; then
+              break
+            fi
+          done
+
+          if [[ $exist -eq 0 ]]; then
+            echo "build=true" >> $GITHUB_OUTPUT
+            build=true
+          else
+            echo "build=false" >> $GITHUB_OUTPUT
+            build=false
+          fi
+
+          echo "Exist: $exist Build: $build"
+
+          if [[ $build = "true" ]] && [[ $type = "release" ]]; then
+            echo "::error title=RELEASE ARTIFACT::\"You are only allowed to build and deploy snapshots, you are trying to deploy a release ($version) that has no artifact.\""
+            exit 1
+          fi
 
   build:
     if: ${{ needs.artifact.outputs.build == 'true' }}
@@ -67,15 +165,17 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJson(needs.artifact.outputs.function_matrix) }}
-    uses: inditex/lib-sisucommonsgh/.github/workflows/build-azf-node.yml@v2.0.0-node-alpha.8
+    uses: inditex/lib-sisucommonsgh/.github/workflows/build-node.yml@v2.0.0-node-alpha.1
     with:
       from: ${{ inputs.from }}
       environment: ${{ inputs.environment }}
+      cloud: ${{ matrix.cloud }}
       AZURE_FUNCTIONAPP_RESOURCEGROUP: ${{ matrix.resource_group }}
       AZURE_FUNCTIONAPP_NAME: ${{ matrix.name }}
       PACKAGE_PATH: ${{ matrix.package_path }}
       functions: ${{ toJSON(matrix.functions) }}
-      node_version: ${{ matrix.runtime == 'node16' && '16' || '18' }}
+      node_version: ${{ matrix.runtime }}
+      cloud: ${{ matrix.cloud }}
     secrets:
       SISU: ${{ secrets.SISU }}
       DIST_PLAT_DEPLOYER_USERNAME: ${{ secrets.DIST_PLAT_DEPLOYER_USERNAME }}
@@ -93,9 +193,9 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJson(needs.artifact.outputs.function_matrix) }}
-    uses: inditex/lib-sisucommonsgh/.github/workflows/liquibase.yml@v2.0.0-node-alpha.9
+    uses: inditex/lib-sisucommonsgh/.github/workflows/liquibase.yml@v2.0.0-node-alpha.1
     with:
-      enabled: ${{ contains(toJSON(matrix), '"db":') }}
+      enabled: ${{ contains(toJSON(matrix), '"db":') && inputs.run_db }}
       from: ${{ needs.artifact.outputs.version || needs.build.outputs.version }}
       environment: ${{ inputs.environment }}
       vault_resourcegroup: ${{ matrix.vault.resource_group }}
@@ -115,7 +215,7 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJson(needs.artifact.outputs.function_matrix) }}
-    uses: inditex/lib-sisucommonsgh/.github/workflows/publish-azf.yml@v2.0.0-node-alpha.9
+    uses: inditex/lib-sisucommonsgh/.github/workflows/publish-azf.yml@v2.0.0-node-alpha.1
     with:
       from: ${{ needs.artifact.outputs.version || needs.build.outputs.version }}
       environment: ${{ inputs.environment }}
@@ -144,7 +244,7 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJson(needs.artifact.outputs.function_matrix) }}
-    uses: inditex/lib-sisucommonsgh/.github/workflows/swap-azf.yml@v2.0.0-node-alpha.9
+    uses: inditex/lib-sisucommonsgh/.github/workflows/swap-azf.yml@v2.0.0-node-alpha.1
     with:
       from: ${{ needs.artifact.outputs.version || needs.build.outputs.version }}
       environment: ${{ inputs.environment }}
@@ -171,7 +271,7 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJson(needs.artifact.outputs.function_matrix) }}
-    uses: inditex/lib-sisucommonsgh/.github/workflows/e2e-remote.yml@v2.0.0-node-alpha.9
+    uses: inditex/lib-sisucommonsgh/.github/workflows/e2e-remote.yml@v2.0.0-node-alpha.1
     with:
       enabled: ${{ contains(toJSON(matrix), '"testing":') }}
       repository: ${{ matrix.testing.repository }}
@@ -187,7 +287,7 @@ jobs:
   #     fail-fast: false
   #     matrix:
   #       include: ${{ fromJson(needs.artifact.outputs.function_matrix) }}
-  #   uses: inditex/lib-sisucommonsgh/.github/workflows/swap-azf.yml@v2.0.0-node-alpha.9
+  #   uses: inditex/lib-sisucommonsgh/.github/workflows/swap-azf.yml@v2.0.0-node-alpha.1
   #   with:
   #     from: ${{ inputs.from }}
   #     environment: ${{ inputs.environment }}

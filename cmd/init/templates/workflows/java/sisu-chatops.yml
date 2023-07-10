@@ -8,6 +8,8 @@ on:
 permissions: write-all
 
 env:
+  WORKFLOW_VERSION: << .Version >>
+  UPDATE_WORKFLOW: true
   SCM_EMAIL: srvcibot@inditex.com
   SCM_TOKEN: ${{ secrets.GH_TOKEN_PUSH }}
   SCM_USERNAME: butler-ci-bot
@@ -66,7 +68,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: inditex/lib-sisucommonsgh
-          ref: v2.0.0-java-alpha.9
+          ref: v2.0.0-java-alpha.10
           path: ./.github/actions/
           token: ${{ secrets.GH_TOKEN_READER }}
 
@@ -136,7 +138,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: inditex/lib-sisucommonsgh
-          ref: v2.0.0-java-alpha.9
+          ref: v2.0.0-java-alpha.10
           path: ./.github/actions/
           token: ${{ secrets.GH_TOKEN_READER }}
 
@@ -174,7 +176,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: inditex/lib-sisucommonsgh
-          ref: v2.0.0-java-alpha.9
+          ref: v2.0.0-java-alpha.10
           path: ./.github/actions/
           token: ${{ secrets.GH_TOKEN_READER }}
 

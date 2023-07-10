@@ -1,6 +1,12 @@
 name: 1 - SISU CI - Java
 
 on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: Branch, commit or release to run Tests
+        default: ""
+        required: false
   pull_request:
     paths:
       - cloud/**
@@ -15,9 +21,13 @@ on:
         default: ""
         required: false
 
+env:
+  WORKFLOW_VERSION: << .Version >>
+  UPDATE_WORKFLOW: true
+
 jobs:
   unit-test:
-    uses: inditex/lib-sisucommonsgh/.github/workflows/unit-test-java.yml@v2.0.0-java-alpha.9
+    uses: inditex/lib-sisucommonsgh/.github/workflows/unit-test-java.yml@v2.0.0-java-alpha.10
     with:
       from: ${{ inputs.from }}
       java_version: "java17"
@@ -29,7 +39,7 @@ jobs:
       GH_TOKEN_READER: ${{ secrets.GH_TOKEN_READER }}
 
   integration-test:
-    uses: inditex/lib-sisucommonsgh/.github/workflows/integration-test-java.yml@v2.0.0-java-alpha.9
+    uses: inditex/lib-sisucommonsgh/.github/workflows/integration-test-java.yml@v2.0.0-java-alpha.10
     with:
       from: ${{ inputs.from }}
       java_version: "java17"

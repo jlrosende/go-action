@@ -15,6 +15,7 @@ import (
 	"github.com/jlrosende/go-action/cmd/matrix"
 	"github.com/jlrosende/go-action/cmd/test"
 	"github.com/jlrosende/go-action/cmd/update"
+	conf "github.com/jlrosende/go-action/config"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -27,7 +28,7 @@ var (
 		Use:     "sisu",
 		Short:   "Tool to interact with Sisu",
 		Long:    `.`,
-		Version: "v1.0.0",
+		Version: conf.Version,
 	}
 )
 

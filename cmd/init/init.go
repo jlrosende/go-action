@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"text/template"
 
 	"github.com/manifoldco/promptui"
 	"github.com/sethvargo/go-githubactions"
@@ -46,16 +47,18 @@ var (
 )
 
 type InitArgs struct {
-	Runtime string `json:"runtime" yaml:"runtime"`
-	Cloud   string `json:"cloud" yaml:"cloud"`
-	Region  string `json:"region" yaml:"region"`
+	Runtime   string `json:"runtime" yaml:"runtime"`
+	Cloud     string `json:"cloud" yaml:"cloud"`
+	Region    string `json:"region" yaml:"region"`
+	Overwrite bool   `json:"overwrite" yaml:"overwrite"`
 }
 
 func init() {
 
 	InitCmd.Flags().StringVar(&iArgs.Runtime, "runtime", "", "Select the runtime")
 	InitCmd.Flags().StringVar(&iArgs.Cloud, "cloud", "", "Select the cloud")
-	InitCmd.Flags().StringVar(&iArgs.Cloud, "region", "", "Select the region")
+	InitCmd.Flags().StringVar(&iArgs.Region, "region", "", "Select the region")
+	InitCmd.Flags().BoolVar(&iArgs.Overwrite, "overwrite", false, "Overwrite existing files")
 
 }
 
@@ -97,6 +100,14 @@ func initRepo(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	if iArgs.Cloud == "" {
+		iArgs.Cloud = selectCloud()
+	}
+
+	if iArgs.Region == "" {
+		iArgs.Region = selectRegion()
+	}
+
 	config := defaultConf(iArgs.Cloud, iArgs.Runtime, iArgs.Region)
 
 	_, err = os.Stat(CLOUD_DIR)
@@ -108,7 +119,12 @@ func initRepo(cmd *cobra.Command, args []string) {
 	}
 
 	_, err = os.Stat(SISU_PATH)
-	if os.IsNotExist(err) {
+
+	if !os.IsNotExist(err) && !iArgs.Overwrite {
+		iArgs.Overwrite = askOverwrite()
+	}
+
+	if iArgs.Overwrite {
 		err := saveConfig(SISU_PATH, config)
 		if err != nil {
 			log.Errorf("SISU CONF: %v\n", err)
@@ -123,6 +139,24 @@ func initRepo(cmd *cobra.Command, args []string) {
 		return
 	}
 	githubactions.SetOutput("args", string(response))
+}
+
+func askOverwrite() bool {
+	prompt := promptui.Prompt{
+		Label:     "Overwrite files",
+		IsConfirm: true,
+		Default:   "y",
+	}
+
+	result, err := prompt.Run()
+
+	if err != nil {
+		log.Errorf("Prompt failed %v\n", err)
+		return false
+	}
+
+	log.Tracef("You choose %s\n", result)
+	return true
 }
 
 func selectRuntime() string {
@@ -146,6 +180,9 @@ func selectRuntime() string {
 		}
 
 		index, result, err = prompt.Run()
+		if err != nil {
+			log.Panic(err)
+		}
 
 		if index == -1 {
 			items = append(items, result)
@@ -193,7 +230,7 @@ func selectCloud() string {
 func selectRegion() string {
 	validate := func(input string) error {
 		if len(input) < 3 {
-			return errors.New("Username must have more than 3 characters")
+			return errors.New("username must have more than 3 characters")
 		}
 		return nil
 	}
@@ -221,11 +258,6 @@ func saveConfig(filePath string, config *conf.Config) error {
 	ymlEncoder := yaml.NewEncoder(&b)
 	ymlEncoder.SetIndent(2)
 	ymlEncoder.Encode(config)
-	// data, err := yaml.Marshal(config)
-	log.Tracef("\n%s", string(b.Bytes()))
-	// if err != nil {
-	// 	return err
-	// }
 
 	fp, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
@@ -236,7 +268,7 @@ func saveConfig(filePath string, config *conf.Config) error {
 	return nil
 }
 
-func DirectoryFromTemplate(directory, template string) error {
+func DirectoryFromTemplate(directory, template_dir string) error {
 	_, err := os.Stat(directory)
 	if os.IsNotExist(err) {
 		err := os.MkdirAll(directory, 0755)
@@ -245,23 +277,46 @@ func DirectoryFromTemplate(directory, template string) error {
 		}
 	}
 
-	tmpl_files, err := tplDir.ReadDir(template)
+	tmpl_files, err := tplDir.ReadDir(template_dir)
 	if err != nil {
 		return err
 	}
 
-	for _, tmpl := range tmpl_files {
-		src_tmpl_path := path.Join(template, tmpl.Name())
+	for _, file := range tmpl_files {
+		src_tmpl_path := path.Join(template_dir, file.Name())
 
-		fileContent, err := tplDir.ReadFile(src_tmpl_path)
+		tmpl, err := template.New(file.Name()).Delims("<<", ">>").ParseFS(tplDir, src_tmpl_path)
 		if err != nil {
 			return err
 		}
-		dest_tmpl_path := path.Join(directory, tmpl.Name())
-		err = os.WriteFile(dest_tmpl_path, fileContent, 0666)
+
+		dest_tmpl_path := path.Join(directory, file.Name())
+
+		fp, err := os.Create(dest_tmpl_path)
 		if err != nil {
 			return err
 		}
+
+		err = tmpl.Execute(fp, struct {
+			Version string
+		}{
+			Version: conf.Version,
+		})
+		if err != nil {
+			return err
+		}
+
+		// fileContent, err := tplDir.ReadFile(src_tmpl_path)
+		// if err != nil {
+		// 	return err
+		// }
+
+		// dest_tmpl_path := path.Join(directory, file.Name())
+		// err = os.WriteFile(dest_tmpl_path, fileContent, 0666)
+		// if err != nil {
+		// 	return err
+		// }
+
 		log.Debugf("Write file %s", dest_tmpl_path)
 	}
 	return nil
@@ -269,7 +324,7 @@ func DirectoryFromTemplate(directory, template string) error {
 
 func defaultConf(cloud, runtime, region string) *conf.Config {
 	return &conf.Config{
-		Version: "0.0.0",
+		Version: conf.Version,
 		Env: map[string][]conf.Function{
 			"dev": {{
 				Name:          "funtion-name-dev",
