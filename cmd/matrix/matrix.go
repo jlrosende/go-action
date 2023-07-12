@@ -1,4 +1,4 @@
-package cmd
+package matrix
 
 import (
 	"encoding/json"
@@ -15,8 +15,10 @@ import (
 )
 
 var (
+	cfgFile   string
+	config    *conf.Config
 	mArgs     = MatrixArgs{}
-	matrixCmd = &cobra.Command{
+	MatrixCmd = &cobra.Command{
 		Use:     "matrix",
 		Aliases: []string{"deploy", "d", "m"},
 		Short:   "Create a matrix of functions",
@@ -31,27 +33,41 @@ type MatrixArgs struct {
 	Region string `json:"region,omitempty"`
 	Name   string `json:"name,omitempty"`
 	Cloud  string `json:"cloud,omitempty"`
+	RunBD bool   `json:"run-db"`
 }
 
 func init() {
 
-	matrixCmd.Flags().StringVarP(&mArgs.Env, "environment", "e", "", "Select the environment to be matrixed (required)")
-	matrixCmd.Flags().StringVarP(&mArgs.From, "from", "f", "", "Select the tag, branch or commit to be matrixed (required)")
-	matrixCmd.MarkFlagRequired("environment")
-	matrixCmd.MarkFlagRequired("from")
-	matrixCmd.MarkFlagsRequiredTogether("environment", "from")
+	MatrixCmd.Flags().StringVarP(&mArgs.Env, "environment", "e", "", "Select the environment to be matrixed (required)")
+	MatrixCmd.Flags().StringVarP(&mArgs.From, "from", "f", "", "Select the tag, branch or commit to be matrixed (required)")
+	MatrixCmd.MarkFlagRequired("environment")
+	MatrixCmd.MarkFlagRequired("from")
+	MatrixCmd.MarkFlagsRequiredTogether("environment", "from")
 
 	// Filter by name default * to select all options
-	matrixCmd.Flags().StringVarP(&mArgs.Name, "name", "n", ".*", "Regex to select the matrix options from the list")
+	MatrixCmd.Flags().StringVarP(&mArgs.Name, "name", "n", ".*", "Regex to select the matrix options from the list")
 
 	// Filter by region
-	matrixCmd.Flags().StringVarP(&mArgs.Region, "region", "r", ".*", "Regex to select which matrix options are select by region")
+	MatrixCmd.Flags().StringVarP(&mArgs.Region, "region", "r", ".*", "Regex to select which matrix options are select by region")
 
 	// Filter by cloud
-	matrixCmd.Flags().StringVarP(&mArgs.Cloud, "cloud", "c", ".*", "Regex to select which matrix options are select by cloud")
+	MatrixCmd.Flags().StringVarP(&mArgs.Cloud, "cloud", "c", ".*", "Regex to select which matrix options are select by cloud")
+
+	MatrixCmd.Flags().StringVar(&cfgFile, "config", "", "config file (default is sisu.{yml,yaml})")
+	
+	MatrixCmd.Flags().BoolVar(&mArgs.RunBD, "run-db", true, "Run the action to deploy database configuration")
+
 }
 
 func matrix(cmd *cobra.Command, args []string) {
+
+	log.Trace("cfgFile", cfgFile)
+	config, err := conf.LoadConfig(cfgFile)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
 	log.Tracef("Environment: %+v\n", mArgs.Env)
 	log.Tracef("From: %+v\n", mArgs.From)
 	log.Tracef("Region: %s", mArgs.Region)

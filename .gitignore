@@ -15,3 +15,12 @@
 # vendor/
 
 temp
+
+sisu.yml
+sisu.yaml
+
+temp
+
+# Build and distribution directories
+build
+dist

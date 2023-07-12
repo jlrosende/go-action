@@ -1,0 +1,162 @@
+name: 2 - SISU CD Snapshot - Java
+
+on:
+  pull_request:
+    branches-ignore:
+      - main
+    types:
+      - closed
+
+  workflow_dispatch:
+    inputs:
+      from:
+        description: "Origin of code to build snapshot artifacts"
+        type: string
+        required: true
+        default: ""
+      environment:
+        description: "Non production environment"
+        type: string
+        required: true
+      extra_args:
+        description: "extra args to select the fucntions to deploy"
+        type: string
+        required: false
+        default: ""
+      force:
+        description: "Forces the creation of the snapshot even if it already exists."
+        type: boolean
+        required: false
+        default: false
+
+  workflow_call:
+    inputs:
+      from:
+        description: "Origin of code to build artifacts"
+        type: string
+        required: true
+        default: ""
+      environment:
+        description: "Non production environment"
+        default: dev
+        type: string
+      extra_args:
+        description: "extra args to select the fucntions to deploy"
+        type: string
+        required: false
+        default: ""
+
+env:
+  WORKFLOW_VERSION: << .Version >>
+  UPDATE_WORKFLOW: true
+
+jobs:
+  # Get the sisu.yml config file to create a matrix of snapshots
+  snapshot_matrix:
+    if: ${{ contains(fromJSON('["workflow_dispatch", "workflow_call"]'), github.event_name) || ( github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'snapshot') && contains(join(github.event.pull_request.labels.*.name, ','), 'environment/') ) }}
+    runs-on: ubuntu-latest
+
+    outputs:
+      env: "${{ steps.envs.outputs.env }}"
+      function_matrix: '{ "include": ${{ steps.matrix.outputs.function_matrix }} }'
+
+    steps:
+      - name: Get env PR
+        if: ${{ ! contains(fromJSON('["workflow_dispatch", "workflow_call"]'), github.event_name) }}
+        id: envs
+        shell: python
+        run: |
+          import os
+
+          labels = "${{ join(github.event.pull_request.labels.*.name, ',') }}"
+
+          envs = list(filter(lambda label: label.startswith('environment/'), labels.split(",")))
+
+          if len(envs) > 1:
+              print(f"::error title=Environment::ERROR:Selected more than one environment label {envs}")
+              exit(1)
+
+          if len(envs) < 1:
+              print(f"::error title=Environment::ERROR:You must select one environment label {envs}")
+              exit(2)
+
+          env = envs[-1].split("/")[-1]
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as fp:
+              fp.write(f'env={env}\n')
+
+      - name: Checkout the repo
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Checkout SISU Actions
+        uses: actions/checkout@v3
+        with:
+          repository: inditex/lib-sisucommonsgh
+          ref: v2.0.0-node-alpha.1
+          path: ./.github/actions/
+          token: ${{ secrets.GH_TOKEN_READER }}
+
+      # TODO Añadir action que genere el matrix
+      - name: Create Snapshot Matrix
+        id: matrix
+        uses: ./.github/actions/sisu
+        with:
+          args: matrix -e ${{ inputs.environment || steps.envs.outputs.env }} -f ${{ github.ref }} ${{ inputs.extra_args }}
+
+  # Build and upload a matrix of packages and push them to jfrog
+  build:
+    needs:
+      - snapshot_matrix
+    uses: inditex/lib-sisucommonsgh/.github/workflows/build-node.yml@v2.0.0-node-alpha.5
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.snapshot_matrix.outputs.function_matrix) }}
+
+    with:
+      from: ${{ inputs.from || github.ref }}
+      environment: ${{ inputs.environment || needs.snapshot_matrix.outputs.env }}
+      cloud: ${{ matrix.cloud }}
+      AZURE_FUNCTIONAPP_RESOURCEGROUP: ${{ matrix.resource_group }}
+      AZURE_FUNCTIONAPP_NAME: ${{ matrix.name }}
+      PACKAGE_PATH: ${{ matrix.package_path }}
+      functions: ${{ toJSON(matrix.functions) }}
+      node_version: ${{ matrix.runtime }}
+      cloud: ${{ matrix.cloud }}
+      force: ${{ inputs.force || contains(github.event.pull_request.labels.*.name, 'sisu/force-rebuild') }}
+    secrets:
+      SISU: ${{ secrets.SISU }}
+      DIST_PLAT_DEPLOYER_USERNAME: ${{ secrets.DIST_PLAT_DEPLOYER_USERNAME }}
+      DIST_PLAT_DEPLOYER_TOKEN: ${{ secrets.DIST_PLAT_DEPLOYER_TOKEN }}
+      DT_ENDPOINT: ${{ secrets.DT_ENDPOINT }}
+      DT_SECRET: ${{ secrets.DT_SECRET }}
+      GH_TOKEN_READER: ${{ secrets.GH_TOKEN_READER }}
+
+  # Create a new Issue to run a deployment snapshot pipeline
+  create_deploy_issue:
+    needs:
+      - snapshot_matrix
+      - build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Create Deploy Snapshot Issue
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          sha: ${{ github.sha }}
+          ENV: ${{ needs.snapshot_matrix.outputs.env || inputs.environment }}
+        run: |
+          NEW_SNAPSHOT=${sha:0:7}
+          echo "" > body.txt
+          echo "# Deploy Snapshot $NEW_SNAPSHOT" >> body.txt
+          echo "Create a comment in this issue. Paste the following command to deploy the snapshot **$NEW_SNAPSHOT** in **$ENV** environment." >> body.txt
+          echo "\`\`\`bash" >> body.txt
+          echo "/sisu deploy -e $ENV -f $NEW_SNAPSHOT" >> body.txt
+          echo "\`\`\`" >> body.txt
+          gh issue create -t "Deploy Snapshot $NEW_SNAPSHOT" -F body.txt

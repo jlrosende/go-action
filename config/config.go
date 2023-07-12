@@ -1,69 +1,59 @@
 package config
 
+import (
+	"github.com/go-playground/validator/v10"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
+)
+
+const Version = "v2.0.0-java.alpha.43"
+
 type Config struct {
 	Version string                `yaml:"version" mapstructure:"version" validate:"required"`
 	Env     map[string][]Function `yaml:"environments" mapstructure:"environments" validate:"required,dive,dive"`
 }
 
-type Function struct {
-	Name        string `json:"name" yaml:"name" mapstructure:"name" validate:"required"`
-	Type        string `json:"type" yaml:"type" mapstructure:"type" validate:"required,oneof=back front"`
-	PackagePath string `json:"package_path" yaml:"package_path" mapstructure:"package_path" validate:"required,dirpath"`
-	Region      string `json:"region" yaml:"region" mapstructure:"region" validate:"required"`
-	Cloud       string `json:"cloud" yaml:"cloud" mapstructure:"cloud" validate:"required,oneof=azure aws gcp"`
-	Runtime     string `json:"runtime" yaml:"runtime" mapstructure:"runtime" validate:"required"`
+func LoadConfig(cfgFile string) (*Config, error) {
+	if cfgFile != "" {
+		// Use config file from the flag.
+		viper.SetConfigFile(cfgFile)
+	} else {
+		viper.AddConfigPath(".")
+		viper.AddConfigPath("./cloud")
+		viper.SetConfigType("yaml")
+		viper.SetConfigName("sisu")
+	}
 
-	ResourceGroup string `json:"resource_group,omitempty" yaml:"resource_group,omitempty" mapstructure:"resource_group,omitempty" validate:"required_if=Cloud azure,excluded_with=Account Project"`
-	Account       string `json:"account,omitempty" yaml:"account,omitempty" mapstructure:"account,omitempty" validate:"required_if=Cloud aws,excluded_with=ResourceGroup Project"`
-	Project       string `json:"project,omitempty" yaml:"project,omitempty" mapstructure:"project,omitempty" validate:"required_if=Cloud gcp,excluded_with=ResourceGroup Account"`
+	viper.AutomaticEnv()
 
-	StorageAccount string `json:"storage_account,omitempty" yaml:"storage_account,omitempty" mapstructure:"storage_account,omitempty" validate:"required_if=Cloud azure Type front,excluded_with=S3 GoogleStorage"`
-	S3             string `json:"s3,omitempty" yaml:"s3,omitempty" mapstructure:"s3,omitempty" validate:"required_if=Cloud aws Type front,excluded_with=StorageAccount GoogleStorage"`
-	GoogleStorage  string `json:"google_storage,omitempty" yaml:"google_storage,omitempty" mapstructure:"google_storage,omitempty" validate:"required_if=Cloud gcp Type front,excluded_with=StorageAccount S3"`
+	if err := viper.ReadInConfig(); err == nil {
+		log.Debugf("Using config file: %s", viper.ConfigFileUsed())
+	}
 
-	Environments []string `json:"environments,omitempty" yaml:"environments,omitempty" mapstructure:"environments,omitempty" validate:"omitempty"`
+	var config Config
 
-	Secrets []*Secret `json:"secrets,omitempty" yaml:"secrets,omitempty" mapstructure:"secrets,omitempty" validate:"omitempty,excluded_if=Cloud azure,excluded_if=Cloud aws,dive"`
+	if err := viper.Unmarshal(&config); err != nil {
+		// log.Fatalf("unable to unmarshall the config %v", err)
+		return nil, err
+	}
 
-	Functions *[]string `json:"functions,omitempty" yaml:"functions,omitempty" mapstructure:"functions" validate:"omitempty"`
+	validate := validator.New()
+	if err := validate.Struct(&config); err != nil && viper.ConfigFileUsed() != "" {
+		// log.Fatalf("Missing required attributes %v\n", err)
+		return nil, err
+	}
 
-	Cdn *Cdn `json:"cdn,omitempty" yaml:"cdn,omitempty" mapstructure:"cdn,omitempty" validate:"omitempty,dive"`
-
-	Database *Database `json:"db,omitempty" yaml:"db,omitempty" mapstructure:"db,omitempty" validate:"omitempty,dive"`
-
-	Vault *Vault `json:"vault,omitempty" yaml:"vault,omitempty" mapstructure:"vault,omitempty" validate:"omitempty,dive"`
+	return &config, nil
 }
 
-type Secret struct {
-	Name    string `json:"name" yaml:"name,omitempty" mapstructure:"name,omitempty" validate:"required"`
-	Version string `json:"version" yaml:"version,omitempty" mapstructure:"version,omitempty" validate:"required"`
-	Path    string `json:"path" yaml:"path,omitempty" mapstructure:"path,omitempty" validate:"required,filepath"`
+func NewConfig() *Config {
+	return &Config{}
 }
 
-type Cdn struct {
-	ResourceGroup string `json:"resource_group,omitempty" yaml:"resource_group,omitempty" mapstructure:"resource_group,omitempty" validate:"required_if=Cloud azure,excluded_with=Account Project"`
-	Account       string `json:"account,omitempty" yaml:"account,omitempty" mapstructure:"account,omitempty" validate:"required_if=Cloud aws,excluded_with=ResourceGroup Project"`
-	Project       string `json:"project,omitempty" yaml:"project,omitempty" mapstructure:"project,omitempty" validate:"required_if=Cloud gcp,excluded_with=ResourceGroup Account"`
+func (c *Config) AddEnvironment(name string) {
 
-	Name      string `json:"name" yaml:"name" mapstructure:"name" validate:"required"`
-	Endpoint  string `json:"endpoint" yaml:"endpoint" mapstructure:"endpoint" validate:"required"`
-	Domain    string `json:"domain" yaml:"domain" mapstructure:"domain" validate:"required"`
-	CachePath string `json:"cache_path" yaml:"cache_path" mapstructure:"cache_path" validate:"required"`
 }
 
-type Database struct {
-	ResourceGroup string `json:"resource_group,omitempty" yaml:"resource_group,omitempty" mapstructure:"resource_group,omitempty" validate:"required_if=Cloud azure,excluded_with=Account Project"`
-	Account       string `json:"account,omitempty" yaml:"account,omitempty" mapstructure:"account,omitempty" validate:"required_if=Cloud aws,excluded_with=ResourceGroup Project"`
-	Project       string `json:"project,omitempty" yaml:"project,omitempty" mapstructure:"project,omitempty" validate:"required_if=Cloud gcp,excluded_with=ResourceGroup Account"`
-
-	Name string `json:"name" yaml:"name" mapstructure:"name" validate:"required"`
-	Type string `json:"type" yaml:"type" mapstructure:"type" validate:"required,oneof=postgresql mysql mongodb"`
-}
-
-type Vault struct {
-	ResourceGroup string `json:"resource_group,omitempty" yaml:"resource_group,omitempty" mapstructure:"resource_group,omitempty" validate:"required_if=Cloud azure,excluded_with=Account Project"`
-	Account       string `json:"account,omitempty" yaml:"account,omitempty" mapstructure:"account,omitempty" validate:"required_if=Cloud aws,excluded_with=ResourceGroup Project"`
-	Project       string `json:"project,omitempty" yaml:"project,omitempty" mapstructure:"project,omitempty" validate:"required_if=Cloud gcp,excluded_with=ResourceGroup Account"`
-
-	Name string `json:"name" yaml:"name" mapstructure:"name" validate:"required"`
+func (c *Config) AddFunction(environment string, function Function) {
+	c.Env[environment] = append(c.Env[environment], function)
 }

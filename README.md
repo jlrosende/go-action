@@ -26,12 +26,13 @@ Use "sisu [command] --help" for more information about a command.
 To use this action you need to configure a file configuration file named `sisu.yaml`.
 
 **_`sisu.yaml`_**
+
 ```yaml
 
 ```
 
 ```bash
-sisu --config ./<path-to-config> --log-level <trace|debug|info|warn|error|panic> --log-format 
+sisu --config ./<path-to-config> --log-level <trace|debug|info|warn|error|panic> --log-format
 ```
 
 ### Deploy
@@ -39,9 +40,11 @@ sisu --config ./<path-to-config> --log-level <trace|debug|info|warn|error|panic>
 ```bash
 sisu deploy --environtment <env_name> --from <tag|commit|branch>
 ```
+
 ```bash
 sisu deploy -e <env_name> -f <tag|commit|branch>
 ```
+
 ### Testing
 
 ### Autocompletion

@@ -17,6 +17,16 @@ environments:
         type: postgresql
         name: "db-name"
 
+      swap:
+        mode: front
+        front_door:
+          resource_group: "resource-group-name"
+          name: "front-door-name"
+          origin_group: "origin-group-name"
+        app_insights:
+          resource_group: "resource-group-name"
+          name: "app-insights-name"
+
     - name: "function-2"
       type: back
       resource_group: "resource-group-name"
@@ -27,6 +37,12 @@ environments:
       environments:
         - FOO=value
       functions: [b, c]
+
+      swap:
+        mode: slot
+
+      testing:
+        repository: test-org/test-repo
 
   pre:
     # Required
@@ -41,6 +57,9 @@ environments:
         - FOO=value_1
         - BAR=value_2
 
+      swap:
+        mode: slot
+
   pro:
     # Required
     - name: "function-3"
@@ -54,3 +73,6 @@ environments:
         - FOO=value_1
         - BAR=value_2
       storage_account: "storage_name"
+
+      swap:
+        mode: slot
