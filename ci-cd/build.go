@@ -2,12 +2,20 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 
 	"dagger.io/dagger"
 )
+
+var tag string
+
+func init() {
+	flag.StringVar(&tag, "tag", "", "Set tag of the curret build")
+	flag.Parse()
+}
 
 func main() {
 	if err := build(context.Background()); err != nil {
@@ -51,7 +59,13 @@ func build(ctx context.Context) error {
 			build = build.WithEnvVariable("GOARCH", goarch)
 			build = build.WithEnvVariable("CGO_ENABLED", "0")
 
-			filePath := filepath.Join(path, fmt.Sprintf("go-action-%s-%s", goos, goarch))
+			var fileName string
+			if tag == "" {
+				fileName = fmt.Sprintf("go-action-%s-%s", goos, goarch)
+			} else {
+				fileName = fmt.Sprintf("go-action-%s-%s-%s", tag, goos, goarch)	
+			}
+			filePath := filepath.Join(path, fileName)
 
 			// build application
 			build = build.WithExec([]string{"go", "build", "-o", filePath})
