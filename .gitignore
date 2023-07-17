@@ -24,3 +24,5 @@ temp
 # Build and distribution directories
 build
 dist
+
+node_modules

@@ -13,7 +13,7 @@ jobs:
     if: startsWith(github.event.comment.body, '/sisu ')
 
     outputs:
-      function_matrix: '{ "include": ${{ steps.action.outputs.function_matrix }} }'
+      function_matrix: ${{ steps.action.outputs.function_matrix }}
 
     permissions:
       pull-requests: write
@@ -75,7 +75,8 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.test.outputs.function_matrix) }}
+      matrix: 
+        include: ${{ fromJson(needs.test.outputs.function_matrix) }}
 
     steps:
       - name: ${{ matrix.name }}
