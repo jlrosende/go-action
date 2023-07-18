@@ -39,7 +39,7 @@ func run_action(ctx context.Context) error {
 
 	// node = node.WithDirectory("/src", src).WithWorkdir("/src")
 	node = node.WithEnvVariable("RUNNER_TEMP", "/tmp/runner")
-	node = node.WithEnvVariable("INPUT_SISU_VERSION", "0.0.1")
+	node = node.WithEnvVariable("INPUT_VERSION", "0.0.1")
 
 	node = node.WithExec([]string{"npm", "install"})
 

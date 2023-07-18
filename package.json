@@ -11,8 +11,11 @@
     "tunnel": "^0.0.6",
     "uuid": "^8.3.2"
   },
+  "devDependencies": {
+    "@vercel/ncc": "^0.36.1"
+  },
   "scripts": {
-    "test": "ls -l $DIR"
+    "build": "ncc build index.js --out dist"
   },
   "keywords": [],
   "author": "",

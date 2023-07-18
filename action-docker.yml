@@ -1,0 +1,19 @@
+name: "Go action"
+description: "descripcion my tediosa"
+author: "Jorge López Rosende"
+inputs:
+  token:
+    description: github token to manage repository
+  args:
+    description: "Argumentos del ejecutable"
+    required: true
+outputs:
+  function_matrix:
+    description: "outputs params to run matrix actions (format: json)"
+  args:
+    description: "outputs the arguments of the executed command (format: json)"
+runs:
+  using: "docker"
+  image: "Dockerfile"
+  args:
+    - ${{ inputs.args }}
