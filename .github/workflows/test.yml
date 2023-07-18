@@ -22,11 +22,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Test action
-        id: action
+      - name: Install binary
         uses: ./
-        with:
-          args: deploy --config test/0-azure.yml -e ${{ inputs.env }} -f 1.0.0
+        with: 
+          version: "0.0.1"
+
+      - name: Run go-action
+        id: action
+        run: |
+          go-action deploy --config test/0-azure.yml -e ${{ inputs.env }} -f 1.0.0
 
   run-matrix:
     name: Check Matrix
