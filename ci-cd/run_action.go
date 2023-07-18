@@ -38,14 +38,14 @@ func run_action(ctx context.Context) error {
 	node = node.WithDirectory("/src", src).WithWorkdir("/src")
 
 	// node = node.WithDirectory("/src", src).WithWorkdir("/src")
-	node = node.WithEnvVariable("RUNNER_TEMP", "/temp/runner")
+	node = node.WithEnvVariable("RUNNER_TEMP", "/tmp/runner")
 	node = node.WithEnvVariable("INPUT_SISU_VERSION", "0.0.1")
 
 	node = node.WithExec([]string{"npm", "install"})
 
-	node = node.WithExec([]string{"node", "setup-sisu.js"})
+	node = node.WithExec([]string{"node", "setup-go-action.js"})
 
-	node = node.WithExec([]string{"ls", "-la", "/temp/runner"})
+	node = node.WithExec([]string{"ls", "-la", "/tmp/runner"})
 
 	out, err := node.Stdout(ctx)
 	if err != nil {

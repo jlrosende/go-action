@@ -12,7 +12,7 @@
     "uuid": "^8.3.2"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "ls -l $DIR"
   },
   "keywords": [],
   "author": "",
