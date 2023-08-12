@@ -1,10 +1,10 @@
 
-FROM golang:1.20.0-bullseye
+FROM golang:1.21-bullseye
 
 ARG USER_NAME=vscode
 
 RUN apt-get update \
- && apt-get install -y sudo zsh
+    && apt-get install -y sudo zsh
 
 RUN adduser --disabled-password --gecos '' $USER_NAME
 RUN adduser $USER_NAME sudo

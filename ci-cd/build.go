@@ -1,13 +1,9 @@
 package main
 
 import (
-	"archive/tar"
-	"archive/zip"
-	"compress/gzip"
 	"context"
 	"flag"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 
@@ -35,7 +31,7 @@ func build(ctx context.Context) error {
 	arches := []string{"amd64", "arm64"}
 
 	// initialize Dagger client
-	client, err := dagger.Connect(ctx, dagger.WithLogOutput(os.Stdout))
+	client, err := dagger.Connect(ctx, dagger.WithLogOutput(os.Stderr))
 	if err != nil {
 		return err
 	}
@@ -43,6 +39,14 @@ func build(ctx context.Context) error {
 
 	// get reference to the local project
 	src := client.Host().Directory(".")
+
+	template_path, err := filepath.Abs("./templates")
+	if err != nil {
+		return err
+	}
+	fmt.Println(template_path)
+
+	templates := client.Host().Directory(template_path)
 
 	// create empty directory to put build outputs
 	outputs := client.Directory()
@@ -55,6 +59,8 @@ func build(ctx context.Context) error {
 
 	// mount cloned repository into `golang` image
 	golang = golang.WithDirectory("/src", src).WithWorkdir("/src")
+	golang = golang.WithDirectory("/src/cmd/init/templates", templates)
+	golang = golang.WithDirectory("/src/cmd/update/templates", templates)
 
 	for _, goos := range oses {
 		for _, goarch := range arches {
@@ -68,14 +74,15 @@ func build(ctx context.Context) error {
 
 			var fileName string
 			if tag == "" {
-				fileName = fmt.Sprintf("go-action-%s-%s", goos, goarch)
+				fileName = fmt.Sprintf("sisu-%s-%s", goos, goarch)
 			} else {
-				fileName = fmt.Sprintf("go-action-%s-%s-%s", tag, goos, goarch)
+				fileName = fmt.Sprintf("sisu-%s-%s-%s", tag, goos, goarch)
 			}
 			filePath := filepath.Join(path, fileName)
 
 			// build application
-			build = build.WithExec([]string{"go", "build", "-o", filePath})
+			build = build.WithExec([]string{"go", "build", "-o", filePath, fmt.Sprintf("-ldflags=-X 'github.com/jlrosende/go-action/config.Version=%s'", tag)})
+
 			if goos == "windows" {
 				build = build.WithExec([]string{"zip", "-r", "-j", fmt.Sprintf("%s.zip", filePath), filePath})
 			} else {
@@ -95,86 +102,4 @@ func build(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func compress(file, osType string) error {
-	if osType == "windows" {
-		archive, err := os.Create(fmt.Sprintf("%s.zip", file))
-		if err != nil {
-			return err
-		}
-		defer archive.Close()
-
-		//Create a new zip writer
-		zipWriter := zip.NewWriter(archive)
-		fmt.Println("opening first file")
-		//Add files to the zip archive
-		f1, err := os.Open("file")
-		if err != nil {
-			return err
-		}
-		defer f1.Close()
-
-		fmt.Println("adding file to archive..")
-		w1, err := zipWriter.Create("file")
-		if err != nil {
-			return err
-		}
-		if _, err := io.Copy(w1, f1); err != nil {
-			return err
-		}
-		fmt.Println("closing archive")
-		defer zipWriter.Close()
-		return nil
-	} else {
-		archive, err := os.Create(fmt.Sprintf("%s.tar.gz", file))
-		if err != nil {
-			return err
-		}
-		defer archive.Close()
-
-		gw := gzip.NewWriter(archive)
-		defer gw.Close()
-		tarWriter := tar.NewWriter(gw)
-		defer tarWriter.Close()
-
-		// Open the file which will be written into the archive
-		f, err := os.Open(file)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-
-		// Get FileInfo about our file providing file size, mode, etc.
-		info, err := f.Stat()
-		if err != nil {
-			return err
-		}
-
-		// Create a tar Header from the FileInfo data
-		header, err := tar.FileInfoHeader(info, info.Name())
-		if err != nil {
-			return err
-		}
-
-		// Use full path as name (FileInfoHeader only takes the basename)
-		// If we don't do this the directory strucuture would
-		// not be preserved
-		// https://golang.org/src/archive/tar/common.go?#L626
-		header.Name = file
-
-		// Write file header to the tar archive
-		err = tarWriter.WriteHeader(header)
-		if err != nil {
-			return err
-		}
-
-		// Copy file content to tar archive
-		_, err = io.Copy(tarWriter, f)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	}
 }

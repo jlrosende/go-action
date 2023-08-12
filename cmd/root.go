@@ -54,6 +54,18 @@ func init() {
 	rootCmd.AddCommand(test.TestCmd)
 	rootCmd.AddCommand(update.UpdateCmd)
 
+	if os.Getenv("GITHUB_OUTPUT") == "" {
+		tmp, err := os.CreateTemp(os.TempDir(), "sisu-*.out")
+		if err != nil {
+			log.Fatalf("ERROR: %s", err)
+			return
+		}
+		err = os.Setenv("GITHUB_OUTPUT", tmp.Name())
+		if err != nil {
+			log.Fatalf("ERROR: %s", err)
+			return
+		}
+	}
 }
 
 func initConfig() {

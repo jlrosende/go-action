@@ -6,17 +6,16 @@ import (
 	"reflect"
 	"regexp"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/sethvargo/go-githubactions"
-	"github.com/spf13/cobra"
-
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 
 	conf "github.com/jlrosende/go-action/config"
 )
 
 var (
 	cfgFile   string
-	config    *conf.Config
 	mArgs     = MatrixArgs{}
 	MatrixCmd = &cobra.Command{
 		Use:     "matrix",
@@ -33,7 +32,7 @@ type MatrixArgs struct {
 	Region string `json:"region,omitempty"`
 	Name   string `json:"name,omitempty"`
 	Cloud  string `json:"cloud,omitempty"`
-	RunBD bool   `json:"run-db"`
+	RunBD  bool   `json:"run-db"`
 }
 
 func init() {
@@ -54,7 +53,7 @@ func init() {
 	MatrixCmd.Flags().StringVarP(&mArgs.Cloud, "cloud", "c", ".*", "Regex to select which matrix options are select by cloud")
 
 	MatrixCmd.Flags().StringVar(&cfgFile, "config", "", "config file (default is sisu.{yml,yaml})")
-	
+
 	MatrixCmd.Flags().BoolVar(&mArgs.RunBD, "run-db", true, "Run the action to deploy database configuration")
 
 }
@@ -64,14 +63,27 @@ func matrix(cmd *cobra.Command, args []string) {
 	log.Trace("cfgFile", cfgFile)
 	config, err := conf.LoadConfig(cfgFile)
 	if err != nil {
-		log.Fatal(err)
-		return
+		if err != nil {
+			switch e := err.(type) {
+			case validator.ValidationErrors:
+				for _, errType := range e {
+					githubactions.Errorf("ERROR: %s", errType)
+					log.Errorf("ERROR: %s", errType)
+				}
+				return
+			default:
+				githubactions.Errorf("ERROR: %s", err)
+				log.Error(err)
+				return
+			}
+		}
 	}
 
 	log.Tracef("Environment: %+v\n", mArgs.Env)
 	log.Tracef("From: %+v\n", mArgs.From)
 	log.Tracef("Region: %s", mArgs.Region)
 	log.Tracef("Name: %s", mArgs.Name)
+	log.Tracef("Cloud: %s", mArgs.Cloud)
 
 	environs := config.Env
 
@@ -95,6 +107,14 @@ func matrix(cmd *cobra.Command, args []string) {
 
 	// Filter by name
 	filtered, err = filterByName(filtered, mArgs.Name)
+
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	// Filter by cloud
+	filtered, err = filterByCloud(filtered, mArgs.Cloud)
 
 	if err != nil {
 		log.Error(err)
@@ -152,6 +172,25 @@ func filterByName(options []conf.Function, regex string) ([]conf.Function, error
 	for i, e := range options {
 		if r.MatchString(e.Name) {
 			log.Tracef("[%d] %+v", i, e.Name)
+			filtered = append(filtered, e)
+		}
+	}
+
+	return filtered, nil
+}
+
+func filterByCloud(options []conf.Function, regex string) ([]conf.Function, error) {
+
+	filtered := []conf.Function{}
+
+	r, err := regexp.Compile(regex)
+	if err != nil {
+		return filtered, err
+	}
+
+	for i, e := range options {
+		if r.MatchString(e.Cloud) {
+			log.Tracef("[%d] %+v", i, e.Cloud)
 			filtered = append(filtered, e)
 		}
 	}

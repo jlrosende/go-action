@@ -4,11 +4,21 @@ environments:
     # Required
     - name: "function-name"
 
+      type: back|front
+
       # Required
       rg|resource_group|project|account: "resource-group-name"
 
       # Required IMPORTANT end path with /
       package_path: ./code/dist/
+
+      # Name of the artifact path to upload the package
+      # JFROG Path = function-<snapshot/release>-local/sisu/<artifact_name>/<tag_name>
+      artifact_id: "artifact-name"
+
+      # Maven: name of the build profile
+      # Node: name of the build command. ej: npm run build:<profile-name>
+      profile: "profile-name"
 
       # Required cloud region format
       # ej: aws => eu-west-1
@@ -46,19 +56,31 @@ environments:
       # Optional
       # if not set => cdn not run
       cdn:
-        rg|resource_group|project|account: "resource-group-name"
-        name: "cdn-name"
-        endpoint: front
-        domain: "domain"
-        cache_path: "/path-to-cache/index.html"
+        path: "/path-to-cache/index.html"
+        front-door:
+          resource_group: "resource-group-name"
+          name: "cdn-name"
+          endpoint: "front"
+          domain: "example.com"
+        akamai:
+          domain: "example.com"
+        cloudfront:
+          account: "aws-account"
+          domain: "example.com"
 
       # Optional
       # if not set => db not run
       db:
-        type: postgresql|mongo
+        type: postgresql
         name: "db-name"
         rg|resource_group|project|account: "resource-group-name"
 
       vault:
         rg|resource_group|project|account: "resource-group-name"
         name: "vault-name"
+
+      swap:
+        mode: slot|traffic
+
+      testing:
+        repository: <org>/<repo>

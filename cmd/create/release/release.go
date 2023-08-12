@@ -38,7 +38,7 @@ func init() {
 	ReleaseCmd.MarkFlagsRequiredTogether("environment", "from")
 
 	ReleaseCmd.Flags().StringVarP(&crArgs.Version, "version", "v", "", "Manualy set the version, disable autoincrement")
-	ReleaseCmd.Flags().StringVarP(&crArgs.Increment, "increment", "i", "patch", "Select which part of version is autoincremented (patch, minor, major) (default: patch)")
+	ReleaseCmd.Flags().StringVarP(&crArgs.Increment, "increment", "i", "patch", "Select which part of version is autoincremented (major, minor, patch) (default -> patch)")
 	ReleaseCmd.MarkFlagsMutuallyExclusive("version", "increment")
 
 	ReleaseCmd.Flags().BoolVar(&crArgs.ForceRebuild, "force-rebuild", false, "Force build and compilation of the artifact.")

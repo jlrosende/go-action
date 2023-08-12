@@ -6,8 +6,6 @@ import (
 	"errors"
 	"os"
 	"path"
-	"strings"
-	"text/template"
 
 	"github.com/manifoldco/promptui"
 	"github.com/sethvargo/go-githubactions"
@@ -16,6 +14,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	conf "github.com/jlrosende/go-action/config"
+	"github.com/jlrosende/go-action/utils"
 )
 
 //go:embed templates/*
@@ -47,18 +46,16 @@ var (
 )
 
 type InitArgs struct {
-	Runtime   string `json:"runtime" yaml:"runtime"`
-	Cloud     string `json:"cloud" yaml:"cloud"`
-	Region    string `json:"region" yaml:"region"`
-	Overwrite bool   `json:"overwrite" yaml:"overwrite"`
+	Runtime string `json:"runtime" yaml:"runtime"`
+	Cloud   string `json:"cloud" yaml:"cloud"`
+	Region  string `json:"region" yaml:"region"`
 }
 
 func init() {
 
 	InitCmd.Flags().StringVar(&iArgs.Runtime, "runtime", "", "Select the runtime")
 	InitCmd.Flags().StringVar(&iArgs.Cloud, "cloud", "", "Select the cloud")
-	InitCmd.Flags().StringVar(&iArgs.Region, "region", "", "Select the region")
-	InitCmd.Flags().BoolVar(&iArgs.Overwrite, "overwrite", false, "Overwrite existing files")
+	InitCmd.Flags().StringVar(&iArgs.Cloud, "region", "", "Select the region")
 
 }
 
@@ -72,7 +69,7 @@ func initRepo(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	err = DirectoryFromTemplate(ISSUES_PATH, path.Join(TEMPLATES_DIR, "issues"))
+	err = DirectoryFromTemplate(ISSUES_PATH, path.Join(TEMPLATES_DIR, "ISSUE_TEMPLATES"))
 	if err != nil {
 		log.Errorf("ISSUES: %v\n", err)
 		return
@@ -82,30 +79,20 @@ func initRepo(cmd *cobra.Command, args []string) {
 		iArgs.Runtime = selectRuntime()
 	}
 
-	var lang string = ""
-	switch strings.ToLower(iArgs.Runtime) {
-	case "java11", "java17":
-		lang = "java"
-	case "node16", "node18":
-		lang = "node"
-	case "go119", "go120":
-		lang = "go"
-	default:
-		lang = "java"
-	}
+	lang := utils.ParseRuntime(iArgs.Runtime)
 
-	err = DirectoryFromTemplate(WORKFLOWS_PATH, path.Join(TEMPLATES_DIR, "workflows", lang))
-	if err != nil {
-		log.Errorf("WORKFLOWS: %v\n", err)
-		return
+	if iArgs.Region == "" {
+		iArgs.Region = selectRegion()
 	}
 
 	if iArgs.Cloud == "" {
 		iArgs.Cloud = selectCloud()
 	}
 
-	if iArgs.Region == "" {
-		iArgs.Region = selectRegion()
+	err = DirectoryFromTemplate(WORKFLOWS_PATH, path.Join(TEMPLATES_DIR, "workflows", lang))
+	if err != nil {
+		log.Errorf("WORKFLOWS: %v\n", err)
+		return
 	}
 
 	config := defaultConf(iArgs.Cloud, iArgs.Runtime, iArgs.Region)
@@ -119,12 +106,7 @@ func initRepo(cmd *cobra.Command, args []string) {
 	}
 
 	_, err = os.Stat(SISU_PATH)
-
-	if !os.IsNotExist(err) && !iArgs.Overwrite {
-		iArgs.Overwrite = askOverwrite()
-	}
-
-	if iArgs.Overwrite {
+	if os.IsNotExist(err) {
 		err := saveConfig(SISU_PATH, config)
 		if err != nil {
 			log.Errorf("SISU CONF: %v\n", err)
@@ -141,32 +123,16 @@ func initRepo(cmd *cobra.Command, args []string) {
 	githubactions.SetOutput("args", string(response))
 }
 
-func askOverwrite() bool {
-	prompt := promptui.Prompt{
-		Label:     "Overwrite files",
-		IsConfirm: true,
-		Default:   "y",
-	}
-
-	result, err := prompt.Run()
-
-	if err != nil {
-		log.Errorf("Prompt failed %v\n", err)
-		return false
-	}
-
-	log.Tracef("You choose %s\n", result)
-	return true
-}
-
 func selectRuntime() string {
 	items := []string{
 		"java11",
 		"java17",
+		"graalvm11",
+		"graalvm17",
 		"node16",
 		"node18",
-		"g119",
-		"go120",
+		// "go119",
+		// "go120",
 	}
 	index := -1
 	var result string
@@ -180,9 +146,6 @@ func selectRuntime() string {
 		}
 
 		index, result, err = prompt.Run()
-		if err != nil {
-			log.Panic(err)
-		}
 
 		if index == -1 {
 			items = append(items, result)
@@ -199,7 +162,11 @@ func selectRuntime() string {
 }
 
 func selectCloud() string {
-	items := []string{"aws", "azure", "gcp"}
+	items := []string{
+		"aws",
+		"azure",
+		// "gcp",
+	}
 	index := -1
 	var result string
 	var err error
@@ -230,7 +197,7 @@ func selectCloud() string {
 func selectRegion() string {
 	validate := func(input string) error {
 		if len(input) < 3 {
-			return errors.New("username must have more than 3 characters")
+			return errors.New("Username must have more than 3 characters")
 		}
 		return nil
 	}
@@ -258,6 +225,11 @@ func saveConfig(filePath string, config *conf.Config) error {
 	ymlEncoder := yaml.NewEncoder(&b)
 	ymlEncoder.SetIndent(2)
 	ymlEncoder.Encode(config)
+	// data, err := yaml.Marshal(config)
+	log.Tracef("\n%s", string(b.Bytes()))
+	// if err != nil {
+	// 	return err
+	// }
 
 	fp, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
@@ -268,7 +240,7 @@ func saveConfig(filePath string, config *conf.Config) error {
 	return nil
 }
 
-func DirectoryFromTemplate(directory, template_dir string) error {
+func DirectoryFromTemplate(directory, template string) error {
 	_, err := os.Stat(directory)
 	if os.IsNotExist(err) {
 		err := os.MkdirAll(directory, 0755)
@@ -277,46 +249,23 @@ func DirectoryFromTemplate(directory, template_dir string) error {
 		}
 	}
 
-	tmpl_files, err := tplDir.ReadDir(template_dir)
+	tmpl_files, err := tplDir.ReadDir(template)
 	if err != nil {
 		return err
 	}
 
-	for _, file := range tmpl_files {
-		src_tmpl_path := path.Join(template_dir, file.Name())
+	for _, tmpl := range tmpl_files {
+		src_tmpl_path := path.Join(template, tmpl.Name())
 
-		tmpl, err := template.New(file.Name()).Delims("<<", ">>").ParseFS(tplDir, src_tmpl_path)
+		fileContent, err := tplDir.ReadFile(src_tmpl_path)
 		if err != nil {
 			return err
 		}
-
-		dest_tmpl_path := path.Join(directory, file.Name())
-
-		fp, err := os.Create(dest_tmpl_path)
+		dest_tmpl_path := path.Join(directory, tmpl.Name())
+		err = os.WriteFile(dest_tmpl_path, fileContent, 0666)
 		if err != nil {
 			return err
 		}
-
-		err = tmpl.Execute(fp, struct {
-			Version string
-		}{
-			Version: conf.Version,
-		})
-		if err != nil {
-			return err
-		}
-
-		// fileContent, err := tplDir.ReadFile(src_tmpl_path)
-		// if err != nil {
-		// 	return err
-		// }
-
-		// dest_tmpl_path := path.Join(directory, file.Name())
-		// err = os.WriteFile(dest_tmpl_path, fileContent, 0666)
-		// if err != nil {
-		// 	return err
-		// }
-
 		log.Debugf("Write file %s", dest_tmpl_path)
 	}
 	return nil
@@ -328,12 +277,18 @@ func defaultConf(cloud, runtime, region string) *conf.Config {
 		Env: map[string][]conf.Function{
 			"dev": {{
 				Name:          "funtion-name-dev",
-				Type:          "back",
 				ResourceGroup: "resource-group-name",
+				Type:          "back",
+				ArtifactId:    "artifact-name",
+				Profile:       "profile-name",
 				PackagePath:   "./code/dist/",
 				Region:        region,
 				Cloud:         cloud,
 				Runtime:       runtime,
+				Environments: []string{
+					"Foo=Bar",
+					"SECRET_IN_VAULT=@Microsoft.KeyVault(VaultName=vaultname;SecretName=SECRET_NAME)",
+				},
 				Database: &conf.Database{
 					ResourceGroup: "resource-group-name",
 					Name:          "db-name",
@@ -343,20 +298,24 @@ func defaultConf(cloud, runtime, region string) *conf.Config {
 					ResourceGroup: "resource-group-name",
 					Name:          "vault-name",
 				},
-				Swap: conf.Swap{
-					Mode:        "slot",
-					FrontDoor:   nil,
-					AppInsights: nil,
+				Swap: &conf.Swap{
+					Mode: "slot",
 				},
 			}},
 			"pre": {{
-				Name:          "funtion-name-pre",
-				Type:          "back",
+				Name:          "funtion-name-dev",
 				ResourceGroup: "resource-group-name",
+				Type:          "back",
+				ArtifactId:    "artifact-name",
+				Profile:       "profile-name",
 				PackagePath:   "./code/dist/",
 				Region:        region,
 				Cloud:         cloud,
 				Runtime:       runtime,
+				Environments: []string{
+					"Foo=Bar",
+					"SECRET_IN_VAULT=@Microsoft.KeyVault(VaultName=vaultname;SecretName=SECRET_NAME)",
+				},
 				Database: &conf.Database{
 					ResourceGroup: "resource-group-name",
 					Name:          "db-name",
@@ -366,20 +325,24 @@ func defaultConf(cloud, runtime, region string) *conf.Config {
 					ResourceGroup: "resource-group-name",
 					Name:          "vault-name",
 				},
-				Swap: conf.Swap{
-					Mode:        "slot",
-					FrontDoor:   nil,
-					AppInsights: nil,
+				Swap: &conf.Swap{
+					Mode: "slot",
 				},
 			}},
 			"pro": {{
-				Name:          "funtion-name-pro",
-				Type:          "back",
+				Name:          "funtion-name-dev",
 				ResourceGroup: "resource-group-name",
+				Type:          "back",
+				ArtifactId:    "artifact-name",
+				Profile:       "profile-name",
 				PackagePath:   "./code/dist/",
 				Region:        region,
 				Cloud:         cloud,
 				Runtime:       runtime,
+				Environments: []string{
+					"Foo=Bar",
+					"SECRET_IN_VAULT=@Microsoft.KeyVault(VaultName=vaultname;SecretName=SECRET_NAME)",
+				},
 				Database: &conf.Database{
 					ResourceGroup: "resource-group-name",
 					Name:          "db-name",
@@ -389,10 +352,8 @@ func defaultConf(cloud, runtime, region string) *conf.Config {
 					ResourceGroup: "resource-group-name",
 					Name:          "vault-name",
 				},
-				Swap: conf.Swap{
-					Mode:        "slot",
-					FrontDoor:   nil,
-					AppInsights: nil,
+				Swap: &conf.Swap{
+					Mode: "slot",
 				},
 			}},
 		},

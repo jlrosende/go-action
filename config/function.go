@@ -3,10 +3,14 @@ package config
 type Function struct {
 	Name        string `json:"name" yaml:"name" mapstructure:"name" validate:"required"`
 	Type        string `json:"type" yaml:"type" mapstructure:"type" validate:"required,oneof=back front"`
-	PackagePath string `json:"package_path" yaml:"package_path" mapstructure:"package_path" validate:"required,dirpath"`
+	PackagePath string `json:"package_path" yaml:"package_path" mapstructure:"package_path" validate:"required"`
 	Region      string `json:"region" yaml:"region" mapstructure:"region" validate:"required"`
 	Cloud       string `json:"cloud" yaml:"cloud" mapstructure:"cloud" validate:"required,oneof=azure aws gcp"`
 	Runtime     string `json:"runtime" yaml:"runtime" mapstructure:"runtime" validate:"required"`
+
+	ArtifactId string `json:"artifact_id" yaml:"artifact_id" mapstructure:"artifact_id" validate:"required"`
+
+	Profile string `json:"profile" yaml:"profile" mapstructure:"profile" validate:"required"`
 
 	ResourceGroup string `json:"resource_group,omitempty" yaml:"resource_group,omitempty" mapstructure:"resource_group,omitempty" validate:"required_if=Cloud azure,excluded_with=Account Project"`
 	Account       string `json:"account,omitempty" yaml:"account,omitempty" mapstructure:"account,omitempty" validate:"required_if=Cloud aws,excluded_with=ResourceGroup Project"`
@@ -30,5 +34,5 @@ type Function struct {
 
 	Testing *Testing `json:"testing,omitempty" yaml:"testing,omitempty" mapstructure:"testing,omitempty" validate:"omitempty,dive"`
 
-	Swap Swap `json:"swap" yaml:"swap" mapstructure:"swap" validate:"required,dive"`
+	Swap *Swap `json:"swap" yaml:"swap" mapstructure:"swap" validate:"required_if=Type back,dive"`
 }

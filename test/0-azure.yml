@@ -12,20 +12,14 @@ environments:
         - FOO=value
       functions:
         - a
+
       db:
         resource_group: "resource-group-name"
         type: postgresql
         name: "db-name"
 
       swap:
-        mode: front
-        front_door:
-          resource_group: "resource-group-name"
-          name: "front-door-name"
-          origin_group: "origin-group-name"
-        app_insights:
-          resource_group: "resource-group-name"
-          name: "app-insights-name"
+        mode: traffic
 
     - name: "function-2"
       type: back
