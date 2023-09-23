@@ -34,7 +34,8 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
     -p ssh-agent \
     -p golang \
     -p https://github.com/zsh-users/zsh-autosuggestions \
-    -p https://github.com/zsh-users/zsh-completions \
+    -p https://github.com/zsh-users/zsh-syntax-highlighting \
+    # -p https://github.com/zsh-users/zsh-completions \
     -a "SPACESHIP_TIME_SHOW=false" \
     -a "SPACESHIP_TIME_COLOR=8" \
     -a "SPACESHIP_USER_SHOW=always" \
@@ -57,4 +58,13 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
     -a "SPACESHIP_DOCKER_SHOW=false" \
     -a "SPACESHIP_ASYNC_SHOW=false" \
     -a "SPACESHIP_GIT_ASYNC=false" \
-    -a "SPACESHIP_GIT_BRANCH_ASYNC=false" 
+    -a "SPACESHIP_GIT_BRANCH_ASYNC=false" \
+    -a "ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#f1d687'"
+
+RUN go install -v github.com/cweill/gotests/gotests@v1.6.0 && \
+    go install -v github.com/fatih/gomodifytags@v1.16.0 && \
+    go install -v github.com/josharian/impl@v1.1.0 && \
+    go install -v github.com/haya14busa/goplay/cmd/goplay@v1.0.0 && \
+    go install -v github.com/go-delve/delve/cmd/dlv@latest && \
+    go install -v honnef.co/go/tools/cmd/staticcheck@latest && \
+    go install -v golang.org/x/tools/gopls@latest

@@ -22,7 +22,7 @@ jobs:
       
       - name: Run Dagger pipeline
         working-directory: code
-        run: dagger run go run ${{ github.workspace }}/pipelines/ci/unit-test.go
+        run: dagger run go run ${{ github.workspace }}/pipelines/ci/unit
           
   integration-test:
     name: Unit test
@@ -41,4 +41,4 @@ jobs:
       
       - name: Run Dagger pipeline
         working-directory: code
-        run: dagger run go run ${{ github.workspace }}/pipelines/ci/integration-test.go
+        run: dagger run go run ${{ github.workspace }}/pipelines/ci/integration
