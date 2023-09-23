@@ -37,8 +37,6 @@ func build(ctx context.Context) error {
 	}
 	defer client.Close()
 
-	os.Exit(1)
-
 	// get reference to the local project
 	src := client.Host().Directory(".")
 
