@@ -1,0 +1,44 @@
+
+name: Run test
+
+on: 
+  pull_request:
+
+jobs:
+  unit-test:
+    name: Unit test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: pipelines/go.mod
+          cache-dependency-path: |
+            pipelines/go.sum
+
+      - name: Install Dagger CLI
+        run: cd /usr/local && { curl -L https://dl.dagger.io/dagger/install.sh | sh; cd -; }
+      
+      - name: Run Dagger pipeline
+        working-directory: code
+        run: dagger run go run ${{ github.workspace }}/pipelines/ci/unit-test.go
+          
+  integration-test:
+    name: Unit test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: pipelines/go.mod
+          cache-dependency-path: |
+            pipelines/go.sum
+
+      - name: Install Dagger CLI
+        run: cd /usr/local && { curl -L https://dl.dagger.io/dagger/install.sh | sh; cd -; }
+      
+      - name: Run Dagger pipeline
+        working-directory: code
+        run: dagger run go run ${{ github.workspace }}/pipelines/ci/integration-test.go

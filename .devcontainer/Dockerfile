@@ -1,23 +1,39 @@
+FROM golang:1.21-bookworm
 
-FROM golang:1.21-bullseye
+ARG USERNAME=vscode
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
 
-ARG USER_NAME=vscode
+# Create the user
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+    #
+    # [Optional] Add sudo support. Omit if you don't need to install software after connecting.
+    && apt-get update \
+    && apt-get install -y sudo \
+    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME
 
-RUN apt-get update \
-    && apt-get install -y sudo zsh
+# ********************************************************
+# * Anything else you want to do like clean up goes here *
+# ********************************************************
 
-RUN adduser --disabled-password --gecos '' $USER_NAME
-RUN adduser $USER_NAME sudo
-RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+# Install libraries and other tools
 
-USER $USER_NAME
+RUN sh -c "$(wget -O- https://raw.githubusercontent.com/nektos/act/master/install.sh)"
 
-WORKDIR /home/$USER_NAME
+RUN cd /usr/local && sh -c "$(wget -O- https://dl.dagger.io/dagger/install.sh)"
 
+# [Optional] Set the default user. Omit if you want to keep the default as root.
+USER $USERNAME
+
+# Uses "Spaceship" theme with some customization. Uses some bundled plugins and installs some more from github
 RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.1.5/zsh-in-docker.sh)" -- \
     -t https://github.com/denysdovhan/spaceship-prompt \
+    -p git \
+    -p ssh-agent \
+    -p golang \
     -p https://github.com/zsh-users/zsh-autosuggestions \
-    -p https://github.com/zsh-users/zsh-syntax-highlighting \
     -p https://github.com/zsh-users/zsh-completions \
     -a "SPACESHIP_TIME_SHOW=false" \
     -a "SPACESHIP_TIME_COLOR=8" \
@@ -42,5 +58,3 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
     -a "SPACESHIP_ASYNC_SHOW=false" \
     -a "SPACESHIP_GIT_ASYNC=false" \
     -a "SPACESHIP_GIT_BRANCH_ASYNC=false" 
-
-CMD /bin/zsh

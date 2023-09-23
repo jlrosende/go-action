@@ -54,6 +54,10 @@ func build(ctx context.Context) error {
 	// get `golang` image
 	golang := client.Container().From("golang:1.20.6-bullseye")
 
+	golangCache := client.CacheVolume("go-cache")
+	golang = golang.WithEnvVariable("GOCACHE", "/go/cache")
+	golang = golang.WithMountedCache("/go/cache", golangCache)
+
 	golang = golang.WithExec([]string{"apt", "update"})
 	golang = golang.WithExec([]string{"apt", "install", "zip", "gzip", "tar", "-y"})
 
@@ -61,6 +65,8 @@ func build(ctx context.Context) error {
 	golang = golang.WithDirectory("/src", src).WithWorkdir("/src")
 	golang = golang.WithDirectory("/src/cmd/init/templates", templates)
 	golang = golang.WithDirectory("/src/cmd/update/templates", templates)
+
+	golang = golang.WithExec([]string{"go", "mod", "download"})
 
 	for _, goos := range oses {
 		for _, goarch := range arches {
