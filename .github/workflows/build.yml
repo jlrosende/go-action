@@ -20,6 +20,8 @@ jobs:
 
       - id: go-cache-paths
         run: |
+          mkdir -p ${{ runner.temp }}/go-build
+          mkdir -p ${{ runner.temp }}/go-mod
           echo "go-build=${{ runner.temp }}/go-build" >> $GITHUB_OUTPUT
           echo "go-mod=${{ runner.temp }}/go-mod" >> $GITHUB_OUTPUT
 
