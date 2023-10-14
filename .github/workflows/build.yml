@@ -18,6 +18,23 @@ jobs:
           cache-dependency-path: |
             pipelines/go.sum
 
+      - id: go-cache-paths
+        run: |
+          echo "go-build=$(go env GOCACHE)" >> $GITHUT_OUTPUT
+          echo "go-mod=$(go env GOMODCACHE)" >> $GITHUT_OUTPUT
+
+      - name: Go Build Cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.go-cache-paths.outputs.go-build }}
+          key: ${{ runner.os }}-go-build-${{ hashFiles('code/go.sum') }}
+
+      - name: Go Build Cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.go-cache-paths.outputs.go-mod }}
+          key: ${{ runner.os }}-go-mod-${{ hashFiles('code/go.sum') }}
+
       - name: Install Dagger CLI
         run: cd /usr/local && { curl -L https://dl.dagger.io/dagger/install.sh | sh; cd -; }
       

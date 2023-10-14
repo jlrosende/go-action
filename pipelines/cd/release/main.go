@@ -20,6 +20,7 @@ func init() {
 func main() {
 	if err := build(context.Background()); err != nil {
 		fmt.Println(err)
+		os.Exit(1)
 	}
 }
 
@@ -48,15 +49,21 @@ func build(ctx context.Context) error {
 
 	templates := client.Host().Directory(template_path)
 
+	goBuildCache := client.Host().Directory(os.Getenv("GO_CACHE"))
+	goModCache := client.Host().Directory(os.Getenv("GO_MODCACHE"))
+
+	fmt.Println(os.Getenv("GO_CACHE"))
+	fmt.Println(os.Getenv("GO_MODCACHE"))
+	// return errors.New("Set new caches")
+
 	// create empty directory to put build outputs
 	outputs := client.Directory()
 
 	// get `golang` image
-	golang := client.Container().From("golang:1.20.6-bullseye")
+	golang := client.Container().From("golang:1.21-bookworm")
 
-	golangCache := client.CacheVolume("go-cache")
-	golang = golang.WithEnvVariable("GOCACHE", "/go/cache")
-	golang = golang.WithMountedCache("/go/cache", golangCache)
+	golang = golang.WithDirectory("/root/.cache/go-build", goBuildCache)
+	golang = golang.WithDirectory("/go/pkg/mod", goModCache)
 
 	golang = golang.WithExec([]string{"apt", "update"})
 	golang = golang.WithExec([]string{"apt", "install", "zip", "gzip", "tar", "-y"})
