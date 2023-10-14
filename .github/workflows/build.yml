@@ -40,4 +40,7 @@ jobs:
       
       - name: Run Dagger pipeline
         working-directory: code
+        env:
+          GO_CACHE: ${{ steps.go-cache-paths.outputs.go-build }}
+          GO_MODCACHE: ${{ steps.go-cache-paths.outputs.go-mod }}
         run: dagger run go run ${{ github.workspace }}/pipelines/cd/release
