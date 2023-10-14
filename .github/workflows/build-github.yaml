@@ -22,6 +22,7 @@ jobs:
           go-version-file: code/go.mod
           cache-dependency-path: |
             code/go.sum
+          architecture: ${{ matrix.arch }}
 
       - name: Run Dagger pipeline
         working-directory: code
