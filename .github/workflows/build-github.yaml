@@ -22,6 +22,14 @@ jobs:
           go-version-file: code/go.mod
           cache-dependency-path: |
             code/go.sum
+
+      - name: Run Dagger pipeline
+        working-directory: code
+        env:
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+          CGO_ENABLED: "0"
+        run: go mod download
     
       - name: Run Dagger pipeline
         working-directory: code
@@ -29,4 +37,4 @@ jobs:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
           CGO_ENABLED: "0"
-        run: go go build -o ../build/sisu-${{ matrix.os }}-${{ matrix.arch }}
+        run: go build -o ../build/sisu-${{ matrix.os }}-${{ matrix.arch }}
