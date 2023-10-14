@@ -75,6 +75,12 @@ func build(ctx context.Context) error {
 
 	golang = golang.WithExec([]string{"go", "mod", "download"})
 
+	goModCache = goModCache.WithDirectory(os.Getenv("GO_MODCACHE"), golang.Directory("/go/pkg/mod"))
+	_, err = goModCache.Export(ctx, os.Getenv("GO_MODCACHE"))
+	if err != nil {
+		return err
+	}
+
 	var build *dagger.Container
 	for _, goos := range oses {
 		for _, goarch := range arches {
@@ -118,11 +124,6 @@ func build(ctx context.Context) error {
 	}
 
 	_, err = goBuildCache.Export(ctx, os.Getenv("GO_CACHE"))
-	if err != nil {
-		return err
-	}
-	goModCache = goModCache.WithDirectory(os.Getenv("GO_MODCACHE"), golang.Directory("/go/pkg/mod"))
-	_, err = goModCache.Export(ctx, os.Getenv("GO_MODCACHE"))
 	if err != nil {
 		return err
 	}
