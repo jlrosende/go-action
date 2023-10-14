@@ -107,6 +107,8 @@ func build(ctx context.Context) error {
 
 			// get reference to build output directory in container
 			outputs = outputs.WithDirectory(path, build.Directory(path))
+			goBuildCache = goBuildCache.WithDirectory(os.Getenv("GO_CACHE"), build.Directory("/root/.cache/go-build"))
+			goModCache = goModCache.WithDirectory(os.Getenv("GO_MODCACHE"), build.Directory("/go/pkg/mod"))
 		}
 	}
 	// write build artifacts to host
@@ -115,11 +117,11 @@ func build(ctx context.Context) error {
 		return err
 	}
 
-	_, err = goBuildCache.WithDirectory(os.Getenv("GO_CACHE"), build.Directory("/root/.cache/go-build")).Export(ctx, os.Getenv("GO_CACHE"))
+	_, err = goBuildCache.Export(ctx, os.Getenv("GO_CACHE"))
 	if err != nil {
 		return err
 	}
-	_, err = goModCache.WithDirectory(os.Getenv("GO_MODCACHE"), build.Directory("/go/pkg/mod")).Export(ctx, os.Getenv("GO_MODCACHE"))
+	_, err = goModCache.Export(ctx, os.Getenv("GO_MODCACHE"))
 	if err != nil {
 		return err
 	}
