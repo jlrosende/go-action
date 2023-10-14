@@ -29,7 +29,7 @@ jobs:
           path: ${{ steps.go-cache-paths.outputs.go-build }}
           key: ${{ runner.os }}-go-build-${{ hashFiles('code/go.sum') }}
 
-      - name: Go Build Cache
+      - name: Go Mod Cache
         uses: actions/cache@v3
         with:
           path: ${{ steps.go-cache-paths.outputs.go-mod }}
