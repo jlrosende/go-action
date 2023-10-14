@@ -75,6 +75,11 @@ func build(ctx context.Context) error {
 
 	golang = golang.WithExec([]string{"go", "mod", "download"})
 
+	_, err = golang.Stdout(ctx)
+	if err != nil {
+		return err
+	}
+
 	goModCache = goModCache.WithDirectory(os.Getenv("GO_MODCACHE"), golang.Directory("/go/pkg/mod"))
 	_, err = goModCache.Export(ctx, os.Getenv("GO_MODCACHE"))
 	if err != nil {
