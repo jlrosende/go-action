@@ -75,13 +75,14 @@ func build(ctx context.Context) error {
 
 	golang = golang.WithExec([]string{"go", "mod", "download"})
 
+	var build *dagger.Container
 	for _, goos := range oses {
 		for _, goarch := range arches {
 			// create a directory for each os and arch
 			path := "build/"
 
 			// set GOARCH and GOOS in the build environment
-			build := golang.WithEnvVariable("GOOS", goos)
+			build = golang.WithEnvVariable("GOOS", goos)
 			build = build.WithEnvVariable("GOARCH", goarch)
 			build = build.WithEnvVariable("CGO_ENABLED", "0")
 
@@ -110,6 +111,15 @@ func build(ctx context.Context) error {
 	}
 	// write build artifacts to host
 	_, err = outputs.Export(ctx, ".")
+	if err != nil {
+		return err
+	}
+
+	_, err = goBuildCache.WithDirectory(os.Getenv("GO_CACHE"), build.Directory("/root/.cache/go-build")).Export(ctx, os.Getenv("GO_CACHE"))
+	if err != nil {
+		return err
+	}
+	_, err = goModCache.WithDirectory(os.Getenv("GO_MODCACHE"), build.Directory("/go/pkg/mod")).Export(ctx, os.Getenv("GO_MODCACHE"))
 	if err != nil {
 		return err
 	}
