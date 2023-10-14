@@ -1,4 +1,4 @@
-name: dagger
+name: Build with Dagger
 
 on:
   push:
